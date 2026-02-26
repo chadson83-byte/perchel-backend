@@ -1,0 +1,42 @@
+[
+    {
+        "username": "Minchang",
+        "password": "$2b$12$wDOTam61f1CgjPcLOrO5QeHIlH6Hw46nMBCFUDGSkSjEM9MkMzpaK",
+        "following": [
+            "Lake",
+            "sina"
+        ],
+        "profile_image": "http://127.0.0.1:8000/images/profile_473cd6f40f2c46c19b4538290cb9e044.jpg"
+    },
+    {
+        "username": "sina",
+        "password": "$2b$12$DgZstm.CD44y6YQ1M.TEk.kPyFanqTADhxkF9n/7ECl31mPR3Jj4W",
+        "following": [
+            "Lake",
+            "Minchang"
+        ],
+        "profile_image": "http://127.0.0.1:8000/images/profile_d50edd7b4a74410e87887648c5384832.png"
+    },
+    {
+        "username": "Lake ",
+        "password": "$2b$12$AsjEIB/Rnvts0iVmGCjPJewZEbdZO/SEGgvP4SwaHBOtFzKE.zS/a",
+        "following": [],
+        "profile_image": null
+    },
+    {
+        "username": "Lake",
+        "password": "$2b$12$RIMfqlapUi4ZPExb4GvMeOMbs7Je10hjJojoSr4PcaeDmnTlrEji2",
+        "following": [
+            "Minchang",
+            "Lake",
+            "sina"
+        ],
+        "profile_image": "http://127.0.0.1:8000/images/profile_9bbdfcb998464542993b165af8c8032e.jpg",
+        "nickname": "Lena",
+        "personal_info": "이기주의 끝판왕",
+        "philosophy": "내 입에 맛있으면 맛있는 거다.",
+        "taste_tags": [
+            "한집만 판다."
+        ]
+    }
+]
