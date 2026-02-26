@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Perchel - Premium Gastronomy Journal</title>
     
     <meta name="referrer" content="no-referrer">
     
     <meta name="color-scheme" content="light only">
     <meta name="theme-color" content="#FF5A20" media="(prefers-color-scheme: light)">
     <meta name="theme-color" content="#FF5A20" media="(prefers-color-scheme: dark)">
-    
-    <title>Perchel - Premium Gastronomy Journal</title>
     
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/images/logo.png">
@@ -63,8 +62,8 @@
             outline: none; 
         }
 
-        /* 🚨 [수정 2] 다크모드에서도 흰색 배경과 검은 글씨 강제 유지 (!important) */
-        html, body { 
+        /* 🚨 [수정 2] 다크모드 방지를 위한 배경/글자색 강제(!important) 적용 */
+        body { 
             font-family: 'Pretendard', sans-serif; 
             background-color: var(--bg-main) !important; 
             color: var(--text-main) !important; 
@@ -164,7 +163,7 @@
             to { opacity: 1; letter-spacing: 4px; transform: translateY(0); } 
         }
 
-        /* 🚨 [수정 4] PWA 앱 설치 유도 배너 CSS */
+        /* 🚨 [수정 4] PWA 앱 설치 유도 팝업 CSS */
         #pwa-install-banner {
             display: none;
             position: fixed;
@@ -809,7 +808,7 @@
         /* 🚨 [수정 2] 모바일 반응형 완벽 보정 (Media Queries) */
         @media screen and (max-width: 600px) {
             .home-top-banner {
-                height: 400px; /* 모바일에서 배너 높이 조정 */
+                height: 400px; 
                 padding: 30px 20px 50px;
             }
             .home-top-banner-title {
@@ -828,13 +827,6 @@
             }
             .top-bar-content {
                 padding: 0 16px;
-            }
-            #global-region-select {
-                font-size: 13px;
-            }
-            .mentor-btn {
-                padding: 6px 10px;
-                font-size: 10px;
             }
         }
     </style>
@@ -862,7 +854,7 @@
         <button class="pwa-btn" id="pwa-install-btn">설치</button>
     </div>
 
-    <div id="login-section" style="display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; z-index: 99999; background-color: var(--bg-main);">
+    <div id="login-section" style="display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; z-index: 99999;">
         <div style="width: 80px; height: 80px; background: var(--brand-primary); border-radius: 24px; display: flex; justify-content: center; align-items: center; color: white; font-size: 42px; font-weight: 900; font-style: italic; margin-bottom: 40px; box-shadow: var(--shadow-soft);">
             p.
         </div>
@@ -903,7 +895,7 @@
             </div>
         </div>
 
-        <p style="margin-top: 50px; color: var(--text-sub); font-size: 12px; text-align: center; line-height: 1.6;">
+        <p style="margin-top: 50px; color: var(--text-placeholder); font-size: 12px; text-align: center; line-height: 1.6;">
             로그인 시 퍼슐의 <span style="text-decoration: underline;">이용약관</span> 및 <br>
             <span style="text-decoration: underline;">개인정보처리방침</span>에 동의하게 됩니다.
         </p>
@@ -967,6 +959,7 @@
                 </div>
             </div>
         </header>
+
         <div id="home-view" class="tab-view" style="display:block;">
             <div class="home-top-banner">
                 <div class="home-top-banner-title" data-ko="오늘의 미식<br>큐레이션" data-en="Today's<br>Curation">오늘의 미식<br>큐레이션</div>
@@ -1665,7 +1658,7 @@
         }
 
         // =========================================================
-        // [5] 메인 데이터 렌더링 (홈, 탐색, 네트워크) 🚨 Fetch 방어 로직 강화
+        // [5] 메인 데이터 렌더링 (홈, 탐색, 네트워크)
         // =========================================================
         async function fetchHomeData() {
             try {
@@ -1877,7 +1870,7 @@
                 const d = await res.json();
                 renderRankingList(d.ranking, container);
             } catch(e) { 
-                container.innerHTML = `<div style="color: red; text-align: center; padding: 20px;">서버와의 통신에 실패했습니다. CORS 문제 또는 서버가 꺼져있을 수 있습니다.</div>`;
+                container.innerHTML = `<div style="color: red; text-align: center; padding: 20px;">서버와의 통신에 실패했습니다.</div>`;
             }
         }
 
@@ -2609,16 +2602,19 @@
         }
 
         // =========================================================
-        // [14] 앱 라이프사이클 관리
+        // [14] 앱 라이프사이클 관리 (🚨 가짜 로그인 버그 완벽 수정)
         // =========================================================
         function initApp() { 
             const user = localStorage.getItem('currentUser'); 
-            if (user) { 
+            
+            // 🚨 "null" 이나 "undefined" 텍스트가 저장되어 있을 때 통과되는 버그 방어
+            if (user && user !== "null" && user !== "undefined" && user.trim() !== "") { 
                 document.getElementById('login-section').style.display = 'none'; 
                 document.getElementById('main-content').style.display = 'block'; 
                 switchTab('home'); 
                 fetchNotifications(); 
             } else {
+                localStorage.removeItem('currentUser'); // 찌꺼기 완벽 삭제
                 document.getElementById('login-section').style.display = 'flex';
                 document.getElementById('main-content').style.display = 'none';
             }
@@ -2675,7 +2671,10 @@
                 if (splash) { 
                     splash.style.transform = 'scale(1.05)';
                     splash.style.opacity = '0'; 
-                    setTimeout(() => { splash.style.display = 'none'; initApp(); }, 600); 
+                    setTimeout(() => { 
+                        splash.style.display = 'none'; 
+                        initApp(); 
+                    }, 600); 
                 } else { 
                     initApp(); 
                 }
