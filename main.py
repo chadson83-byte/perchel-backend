@@ -38,7 +38,7 @@ KAKAO_REST_API_KEY = "cdf28be42d7f14e86fdbe2901a84398a"
 GOOGLE_CLIENT_ID = "725138598590-gjhd8dduh3ag3922il5pcrf15q1rjvvn.apps.googleusercontent.com"
 
 # =========================================================
-# [2] JSON 데이터베이스 헬퍼 함수
+# [2] JSON 데이터베이스 헬퍼 함수 (🚨 방어 로직 추가됨)
 # =========================================================
 def load_db(file_path, default_value):
     if not os.path.exists(file_path):
@@ -47,14 +47,19 @@ def load_db(file_path, default_value):
         return default_value
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+            # 🚨 핵심 방어 코드: 기존 파일이 리스트([])로 잘못 저장되어 있으면, 
+            # 우리가 원하는 형태(디폴트값)로 덮어씌워서 에러를 원천 차단합니다.
+            if type(data) != type(default_value):
+                return default_value
+            return data
     except:
         return default_value
 
 def save_db(file_path, data):
     with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
-
+        
 # =========================================================
 # [3] 데이터 모델 (Pydantic)
 # =========================================================
