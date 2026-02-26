@@ -15,7 +15,7 @@ from datetime import datetime
 # =========================================================
 app = FastAPI(title="Perchel Backend API", version="2.0")
 
-# CORS 설정 (프론트엔드 도메인 허용)
+# 🚨 가장 강력한 CORS 설정 (ERR_FAILED 완벽 차단)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -51,6 +51,7 @@ def load_db(file_path, default_value):
             # 🚨 핵심 방어 코드: 기존 파일이 리스트([])로 잘못 저장되어 있으면, 
             # 우리가 원하는 형태(디폴트값)로 덮어씌워서 에러를 원천 차단합니다.
             if type(data) != type(default_value):
+                print(f"🚨 [경고] {file_path} 파일 형태 오류. 초기화합니다.")
                 return default_value
             return data
     except:
@@ -83,7 +84,7 @@ class ImageUpdateRequest(BaseModel):
     image_url: str
 
 # =========================================================
-# [4] 🚨 핵심: 소셜 로그인 전용 통신 로직
+# [4] 소셜 로그인 전용 통신 로직
 # =========================================================
 @app.post("/login/social")
 async def social_login(req: SocialLoginRequest):
@@ -200,7 +201,8 @@ async def update_profile(req: ProfileUpdateRequest, request: Request):
     
     save_db(USERS_DB, users)
     return {"message": "프로필이 성공적으로 업데이트되었습니다."}
-    # =========================================================
+
+# =========================================================
 # [6] 메인 화면 데이터 (홈, 네트워크)
 # =========================================================
 @app.get("/main/data")
@@ -362,7 +364,8 @@ async def get_profile_stats(request: Request):
             stats["RECOMMENDED"]["count"] += 1
             
     return {"stats": stats}
-    # =========================================================
+
+# =========================================================
 # [10] 외부 API 연동 (카카오 장소 검색 및 이미지 검색)
 # =========================================================
 @app.get("/search/kakao")
@@ -650,4 +653,3 @@ async def read_notifications(request: Request):
         save_db(NOTI_DB, notis)
         
     return {"message": "알림 읽음 처리 완료"}
-    
