@@ -12,7 +12,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=1bf29ed9131417186b665259385414f8&libraries=services&autoload=false"></script>
     
-    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js" integrity="sha384-l+xbElFSnPZ2rOaGxg/8A+tZZhHwX8Dof1sX8ZfI6sBvD7L/t1J2+gqE6Yt1C0E/" crossorigin="anonymous"></script>
+    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <style>
@@ -1239,7 +1239,69 @@
 
         let nationalTop50 = [];
         let regionalTop10 = {};
+// =========================================================
+        // [1.5] 소셜 로그인 엔진 (카카오/구글) - 전역(window) 함수로 수정됨
+        // =========================================================
+        
+        // 1. 카카오 SDK 초기화
+        if (typeof Kakao !== 'undefined' && !Kakao.isInitialized()) {
+            Kakao.init('cdf28be42d7f14e86fdbe2901a84398a');
+        }
 
+        // 2. 소셜 로그인 백엔드 검증 및 처리
+        window.handleSocialLoginServer = async function(provider, token) {
+            try {
+                const res = await fetch(`${API_URL}/login/social`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider: provider, token: token })
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    // 로그인 성공 시 로컬스토리지 저장 및 메인 화면 이동
+                    localStorage.setItem('currentUser', data.username);
+                    followingList = data.following || [];
+                    
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                    initApp();
+                } else {
+                    alert(data.detail || "소셜 로그인 서버 검증에 실패했습니다.");
+                }
+            } catch(e) {
+                console.error("로그인 서버 에러:", e);
+                alert("서버 통신에 실패했습니다. 백엔드(Render)가 켜져 있는지 로그를 확인해주세요.");
+            }
+        };
+
+        // 3. 구글 로그인 콜백 (에러 2 해결: window 전역 함수로 등록)
+        window.handleGoogleLogin = function(response) {
+            window.handleSocialLoginServer('google', response.credential);
+        };
+
+        // 4. 카카오 로그인 실행 함수
+        window.loginWithKakao = function() {
+            if (typeof Kakao === 'undefined') {
+                alert("카카오 스크립트가 차단되었습니다. 새로고침 후 다시 시도해주세요.");
+                return;
+            }
+            Kakao.Auth.login({
+                success: function(authObj) {
+                    window.handleSocialLoginServer('kakao', authObj.access_token);
+                },
+                fail: function(err) {
+                    alert("카카오 로그인 취소 또는 에러 발생: " + JSON.stringify(err));
+                }
+            });
+        };
+
+        // 5. 로그아웃 함수
+        window.handleLogout = function() { 
+            localStorage.removeItem('currentUser'); 
+            location.reload(); 
+        };
         // =========================================================
         // [2] 공통 유틸리티 (배지, 아바타, 식당 자동 사진 매칭)
         // =========================================================
