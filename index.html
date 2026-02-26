@@ -3,6 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="referrer" content="no-referrer">
+    
+    <meta name="color-scheme" content="light">
+    
     <title>Perchel - Premium Gastronomy Journal</title>
     
     <link rel="manifest" href="/manifest.json">
@@ -12,7 +17,7 @@
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
     <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=1bf29ed9131417186b665259385414f8&libraries=services&autoload=false"></script>
     
-    <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.0/kakao.min.js"></script>
+    <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <style>
@@ -57,10 +62,11 @@
             outline: none; 
         }
 
+        /* 🚨 [수정 4] 다크모드 방지를 위한 배경/글자색 강제(!important) 적용 */
         body { 
             font-family: 'Pretendard', sans-serif; 
-            background-color: var(--bg-main); 
-            color: var(--text-main); 
+            background-color: var(--bg-main) !important; 
+            color: var(--text-main) !important; 
             line-height: 1.6; 
             overflow-x: hidden; 
             -webkit-font-smoothing: antialiased; 
@@ -157,7 +163,7 @@
         }
 
         /* =========================================================
-           [3] 상단 네비게이션 (🚨 로고 크기 및 비율 시안 완벽 반영)
+           [3] 상단 네비게이션
            ========================================================= */
         .top-bar { 
             width: 100%; 
@@ -184,7 +190,7 @@
         .top-bar-content { 
             width: 100%; 
             max-width: 600px; 
-            height: 70px; /* 상단바 여유 공간 확보 */
+            height: 70px; 
             display: flex; 
             justify-content: space-between; 
             align-items: center; 
@@ -192,7 +198,7 @@
         }
 
         .top-logo { 
-            font-size: 32px; /* 🚨 시안에 맞춰 로고 폰트 대폭 확대 (24px -> 32px) */
+            font-size: 32px; 
             font-weight: 900; 
             color: var(--brand-primary); 
             cursor: pointer; 
@@ -307,34 +313,33 @@
         .nav-fab svg { width: 24px; height: 24px; stroke: white; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
         
         /* =========================================================
-           [5] 메인 레이아웃 및 범용 카드 (🔥 시안 완벽 동기화)
+           [5] 메인 레이아웃 및 범용 카드
            ========================================================= */
         #main-content { 
             display: none; 
             width: 100%; 
             max-width: 600px; 
             margin: 0 auto 100px; 
-            padding: 0; /* 🚨 배너를 화면 맨 위까지 꽉 채우기 위해 기본 패딩 제거 */
+            padding: 0; 
         }
         
         .tab-view {
-            padding-top: 70px; /* 기본 탭들은 상단바 높이만큼 패딩 유지 */
+            padding-top: 70px; 
             padding-left: 24px;
             padding-right: 24px;
         }
 
         #home-view {
-            padding: 0 !important; /* 🚨 홈 화면은 배너가 위로 붙도록 패딩 완전 제거 */
+            padding: 0 !important; 
         }
 
         .home-section-container {
-            padding: 0 24px; /* 홈 화면 내 하위 콘텐츠들의 좌우 여백 */
+            padding: 0 24px; 
         }
 
-        /* 🚨 메인 배너: 시안과 똑같은 산뜻한 샐러드/브런치 사진 및 거대한 타이포그래피 */
         .home-top-banner {
             width: 100%;
-            height: 480px; /* 🚨 시안 비율에 맞춰 높이를 화면의 절반 가까이 대폭 확장 */
+            height: 480px; 
             border-radius: 0 0 32px 32px; 
             background-image: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%), url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'); 
             background-size: cover;
@@ -386,7 +391,6 @@
             display: none; 
         }
 
-        /* 🚨 진짜 글래스모피즘(Glassmorphism) 카드: 시안의 은은한 옥색/흰색 그라데이션 완벽 구현 */
         .editor-card { 
             background: linear-gradient(160deg, rgba(255, 255, 255, 0.9) 0%, rgba(224, 242, 241, 0.5) 100%);
             backdrop-filter: blur(16px);
@@ -427,7 +431,6 @@
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* 🚨 오렌지색 팔로우 텍스트 버튼 (시안과 100% 동일) */
         .editor-follow-btn {
             background: var(--brand-fab) !important;
             color: #FFFFFF !important;
@@ -558,7 +561,7 @@
         }
 
         /* =========================================================
-           [7] 서열표 랭킹 UI (원상 복구 완료)
+           [7] 서열표 랭킹 UI
            ========================================================= */
         .tier-header-title { 
             font-size: 18px; 
@@ -745,7 +748,6 @@
             box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
         }
 
-        /* [추가됨] 소셜 로그인 버튼 전용 스타일 */
         .social-login-container {
             width: 100%;
             max-width: 320px;
@@ -769,6 +771,35 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(254, 229, 0, 0.2);
+        }
+
+        /* 🚨 [수정 5] 모바일 환경(Media Queries)을 고려한 반응형 CSS 레이아웃 전면 보정 */
+        @media (max-width: 600px) {
+            .home-top-banner {
+                height: 380px; 
+                padding: 30px 20px 50px;
+            }
+            .home-top-banner-title {
+                font-size: 28px;
+            }
+            .card-grid {
+                grid-template-columns: repeat(2, 1fr); 
+                gap: 12px;
+            }
+            .guide-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            .top-logo {
+                font-size: 28px;
+            }
+            .mentor-btn, .lang-toggle {
+                font-size: 10px;
+                padding: 6px 10px;
+            }
+            .bottom-nav {
+                padding: 0 5px env(safe-area-inset-bottom);
+            }
         }
     </style>
 </head>
@@ -799,7 +830,9 @@
 
         <div class="social-login-container">
             <button class="btn-kakao" onclick="loginWithKakao()">
-                <img src="https://developers.kakao.com/assets/img/lib/logos/kakaolink_btn_small.png" width="20" alt="kakao" style="margin-right: 8px;">
+                <svg viewBox="0 0 24 24" width="20" height="20" style="margin-right: 8px; fill: #191919;">
+                    <path d="M12 3c-5.523 0-10 3.535-10 7.896 0 2.825 1.83 5.3 4.632 6.703-.306 1.135-1.11 4.148-1.14 4.31-.035.195.14.19.223.136.068-.044 3.593-2.457 5.044-3.486.41.037.828.058 1.25.058 5.523 0 10-3.535 10-7.896C22 6.535 17.523 3 12 3z"/>
+                </svg>
                 <span data-ko="카카오로 1초 로그인" data-en="Continue with Kakao">카카오로 1초 로그인</span>
             </button>
 
@@ -823,7 +856,7 @@
             </div>
         </div>
 
-        <p style="margin-top: 50px; color: var(--text-placeholder); font-size: 12px; text-align: center; line-height: 1.6;">
+        <p style="margin-top: 50px; color: var(--text-sub); font-size: 12px; text-align: center; line-height: 1.6;">
             로그인 시 퍼슐의 <span style="text-decoration: underline;">이용약관</span> 및 <br>
             <span style="text-decoration: underline;">개인정보처리방침</span>에 동의하게 됩니다.
         </p>
@@ -887,7 +920,6 @@
                 </div>
             </div>
         </header>
-
         <div id="home-view" class="tab-view" style="display:block;">
             <div class="home-top-banner">
                 <div class="home-top-banner-title" data-ko="오늘의 미식<br>큐레이션" data-en="Today's<br>Curation">오늘의 미식<br>큐레이션</div>
@@ -1239,7 +1271,8 @@
 
         let nationalTop50 = [];
         let regionalTop10 = {};
-// =========================================================
+        
+        // =========================================================
         // [1.5] 소셜 로그인 엔진 (카카오/구글) - 전역(window) 함수로 수정됨
         // =========================================================
         
@@ -1248,7 +1281,7 @@
             Kakao.init('cdf28be42d7f14e86fdbe2901a84398a');
         }
 
-        // 2. 소셜 로그인 백엔드 검증 및 처리
+        // 2. 소셜 로그인 백엔드 검증 및 처리 (CORS 및 에러 핸들링 최적화)
         window.handleSocialLoginServer = async function(provider, token) {
             try {
                 const res = await fetch(`${API_URL}/login/social`, {
@@ -1276,15 +1309,15 @@
             }
         };
 
-        // 3. 구글 로그인 콜백 (에러 2 해결: window 전역 함수로 등록)
+        // 3. 구글 로그인 콜백
         window.handleGoogleLogin = function(response) {
             window.handleSocialLoginServer('google', response.credential);
         };
 
-        // 4. 카카오 로그인 실행 함수
+        // 4. 카카오 로그인 실행 함수 (🚨 v1 버전에 맞게 수정되어 정상 작동 보장)
         window.loginWithKakao = function() {
             if (typeof Kakao === 'undefined') {
-                alert("카카오 스크립트가 차단되었습니다. 새로고침 후 다시 시도해주세요.");
+                alert("카카오 스크립트가 로드되지 않았습니다. 새로고침 후 다시 시도해주세요.");
                 return;
             }
             Kakao.Auth.login({
@@ -1292,7 +1325,8 @@
                     window.handleSocialLoginServer('kakao', authObj.access_token);
                 },
                 fail: function(err) {
-                    alert("카카오 로그인 취소 또는 에러 발생: " + JSON.stringify(err));
+                    console.error("카카오 로그인 취소 또는 에러 발생:", err);
+                    alert("카카오 로그인 에러 발생: " + JSON.stringify(err));
                 }
             });
         };
@@ -1302,6 +1336,7 @@
             localStorage.removeItem('currentUser'); 
             location.reload(); 
         };
+        
         // =========================================================
         // [2] 공통 유틸리티 (배지, 아바타, 식당 자동 사진 매칭)
         // =========================================================
@@ -1344,9 +1379,13 @@
             `;
         }
 
-        // 🔥 대표님이 지적하신 핵심 로직 1: 사진 자동 파싱 (원상 복구)
         function getSmartRestImage(id, category, userImg) {
             if (userImg && userImg !== 'null' && userImg !== '') {
+                // 백엔드 경로 보정 로직 (로컬 테스트 시 127.0.0.1 방어)
+                if (userImg.includes('127.0.0.1:8000') || userImg.startsWith('/images')) {
+                    const fileName = userImg.split('/').pop();
+                    return `${API_URL}/images/${fileName}`;
+                }
                 return userImg; 
             }
             
@@ -1974,9 +2013,10 @@
                 const d = await res.json();
                 renderRankingList(d.ranking, container);
             } catch(e) { 
+                console.error("랭킹 데이터 로드 실패", e);
                 container.innerHTML = `
                     <div class="server-error-banner" style="color: red; text-align: center; padding: 20px;">
-                        데이터를 불러오지 못했습니다.
+                        데이터를 불러오지 못했습니다. 서버 상태를 확인해주세요.
                     </div>
                 `;
             }
@@ -2011,9 +2051,10 @@
                 const d = await res.json();
                 renderRankingList(d.ranking, container);
             } catch(e) {
+                console.error("글로벌 검색 실패", e);
                 container.innerHTML = `
                     <div class="server-error-banner" style="color: red; text-align: center; padding: 20px;">
-                        데이터를 불러오지 못했습니다.
+                        데이터를 불러오지 못했습니다. 서버 상태를 확인해주세요.
                     </div>
                 `;
             }
@@ -2128,7 +2169,7 @@
         }
 
         // =========================================================
-        // [6] 핵심: 프로필 (다크 카드) 및 서열표 엔진 (🚨 우측 상단 Absolute 버튼 반영)
+        // [6] 핵심: 프로필 (다크 카드) 및 서열표 엔진 
         // =========================================================
         async function fetchGuideView(u, isForeign = false) {
             if (isForeign) { 
@@ -2199,7 +2240,6 @@
                     ? `<div class="profile-badges">${data.badges.map(function(b) { return `<span class="badge-item">${b}</span>`; }).join('')}</div>`
                     : '';
 
-                // 🚨 수정된 버튼 로직: 내 프로필이면 우측 상단(Absolute), 남이면 하단 중앙
                 let editBtnHtml = '';
                 let followBtnHtml = '';
 
@@ -2329,7 +2369,7 @@
 
                         html += `
                             <div class="guide-card" onclick="openRestDetail('${safeName}', '${safeCat}', '${safeAddr}', '${safeComment}', '${i.tier||''}', '${i.kakao_id||''}', '${i.image_url||''}', '${currentProfileOwner}', '${i.id||''}')">
-                                <img class="guide-card-bg" src="${finalImg}">
+                                <img class="guide-card-bg" src="${finalImg}" onerror="this.src='https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80'">
                                 <div class="guide-card-overlay">
                                     <div class="guide-tier-text" style="color:${meta.color};">${meta.sub}</div>
                                     <div class="guide-name-text">${i.name}</div>
@@ -2473,7 +2513,7 @@
                     const phone = doc.phone || '';
                     
                     html += `
-                        <div class="user-result-item" onclick="preparePosting('${safeName}', '${safeCat}', '${safeAddr}', '${doc.id}', ${doc.x}, ${doc.y}, '${phone}')" style="border:none; border-bottom:1px solid var(--border-color); border-radius:0; box-shadow:none; padding:16px 0; background:transparent;">
+                        <div class="user-result-item" onclick="preparePosting('${safeName}', '${safeCat}', '${safeAddr}', '${doc.id}', ${doc.x}, ${doc.y}, '${phone}')" style="border:none; border-bottom:1px solid var(--border-color); border-radius:0; box-shadow:none; padding:16px 0; background:transparent; cursor:pointer;">
                             <div style="flex:1;">
                                 <div style="font-weight:800; font-size:15px; color:var(--brand-primary); margin-bottom:4px;">
                                     ${doc.place_name}
@@ -2495,7 +2535,8 @@
                 target.innerHTML = html;
                 
             } catch(e) {
-                alert("🚨 파이썬 백엔드 서버가 멈춰있습니다. 터미널을 확인해주세요.");
+                alert("🚨 파이썬 백엔드 서버가 멈춰있거나 통신에 실패했습니다.");
+                console.error("카카오 검색 에러:", e);
             }
         }
 
@@ -2633,7 +2674,8 @@
                     alert(`🚨 서버 저장 실패! (코드: ${res.status})\n이유: ${errText}`); 
                 }
             } catch(e) { 
-                alert(`🚨 네트워크 통신 에러 발생!\n${e.message}\n(터미널 서버 로그를 확인해주세요)`); 
+                alert(`🚨 네트워크 통신 에러 발생!\n${e.message}`); 
+                console.error("식당 추가 에러:", e);
             }
         }
 
@@ -2666,6 +2708,7 @@
                 }
             } catch (error) {
                 alert(`🚨 네트워크 오류로 삭제하지 못했습니다: ${error.message}`);
+                console.error("식당 삭제 에러:", error);
             }
         }
 
@@ -2776,7 +2819,7 @@
                         `;
 
                         targetData.image_urls.forEach(function(u) {
-                            sliderHtml += `<img src="${u}" class="multi-image-slide">`;
+                            sliderHtml += `<img src="${u}" class="multi-image-slide" onerror="this.src='https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80'">`;
                         });
                         sliderHtml += `</div>`;
                         
@@ -2844,7 +2887,7 @@
                     if (targetData && showGuestbook) {
                         renderComments(db_id, targetData.comments || []);
                     }
-                });
+                }).catch(e => console.error("상세 데이터 로딩 에러:", e));
             }
             
             fetch(`${API_URL}/search/kakao?query=${encodeURIComponent(name)}`)
@@ -3027,6 +3070,7 @@
                 
             } catch(e) {
                 console.error("알림 모달 에러", e);
+                target.innerHTML = `<div style="text-align:center; padding:40px;">알림을 불러오지 못했습니다.</div>`;
             }
         }
 
