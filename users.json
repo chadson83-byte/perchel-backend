@@ -38,5 +38,16 @@
         "taste_tags": [
             "한집만 판다."
         ]
+    },
+    {
+        "username": "hong ",
+        "password": "$2b$12$iRhLzIfxUiPoKI.sspUvqu7KjRtiJn18R6uEoaKJYbOmttg3T9rQK",
+        "following": [],
+        "notifications": [],
+        "profile_image": null,
+        "nickname": "hong ",
+        "personal_info": "",
+        "philosophy": "",
+        "taste_tags": []
     }
 ]

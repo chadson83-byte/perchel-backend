@@ -1,12 +1,21 @@
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Header, Request
+from fastapi import FastAPI, HTTPException, Request, Header, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import List
-import bcrypt, json, os, uuid, shutil, requests
+from typing import List, Optional
+import json
+import os
+import uuid
+import shutil
+import requests
+from datetime import datetime
 
-app = FastAPI()
+# =========================================================
+# [1] 앱 초기화 및 환경 설정
+# =========================================================
+app = FastAPI(title="Perchel Backend API", version="2.0")
 
+# CORS 설정 (프론트엔드 도메인 허용)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,429 +24,625 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 이미지 폴더 마운트 (PWA 로고 및 유저 업로드 이미지용)
 os.makedirs("images", exist_ok=True)
 app.mount("/images", StaticFiles(directory="images"), name="images")
 
+# DB 파일 경로
+USERS_DB = "users.json"
+REST_DB = "restaurants.json"
+NOTI_DB = "notifications.json"
+
+# 외부 API 키 (대표님 발급 키)
 KAKAO_REST_API_KEY = "cdf28be42d7f14e86fdbe2901a84398a"
-DATA_FILE = "restaurants.json"
-USER_FILE = "users.json" 
+GOOGLE_CLIENT_ID = "725138598590-gjhd8dduh3ag3922il5pcrf15q1rjvvn.apps.googleusercontent.com"
 
-def load_data(filename, default_val=[]):
-    if not os.path.exists(filename): return default_val
-    with open(filename, "r", encoding="utf-8") as f: return json.load(f)
+# =========================================================
+# [2] JSON 데이터베이스 헬퍼 함수
+# =========================================================
+def load_db(file_path, default_value):
+    if not os.path.exists(file_path):
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(default_value, f, ensure_ascii=False, indent=4)
+        return default_value
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return default_value
 
-def save_data(filename, data):
-    with open(filename, "w", encoding="utf-8") as f: json.dump(data, f, ensure_ascii=False, indent=4)
+def save_db(file_path, data):
+    with open(file_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
 
-class TierUpdate(BaseModel): tier: str
-class UserAuth(BaseModel): username: str; password: str
-class CommentInput(BaseModel): text: str
-class ImageUpdate(BaseModel): image_url: str
+# =========================================================
+# [3] 데이터 모델 (Pydantic)
+# =========================================================
+class SocialLoginRequest(BaseModel):
+    provider: str
+    token: str
 
-class ProfileUpdate(BaseModel): 
+class ProfileUpdateRequest(BaseModel):
     nickname: str
-    personal_info: str = ""
-    philosophy: str = ""
-    taste_tags: list = []
+    personal_info: str
+    philosophy: str
+    taste_tags: List[str]
 
-TIER_LIMITS = {"⭐⭐⭐ (3스타)": 5, "⭐⭐ (2스타)": 10, "⭐ (1스타)": 15, "단순 추천": 20}
+class TierUpdateRequest(BaseModel):
+    tier: str
 
-# 🌟 NEW: 알림 전송 헬퍼 함수
-def send_notification(target_user: str, message: str, type_name: str = "info"):
-    users = load_data(USER_FILE)
-    for u in users:
-        if u["username"] == target_user:
-            if "notifications" not in u:
-                u["notifications"] = []
-            u["notifications"].append({
-                "id": str(uuid.uuid4())[:8],
-                "message": message,
-                "type": type_name,
-                "read": False
-            })
-            break
-    save_data(USER_FILE, users)
+class CommentRequest(BaseModel):
+    text: str
 
-# ==========================================
-# 📊 데이터 로드 및 통계 (S마크 랭킹 엔진)
-# ==========================================
-@app.get("/main/data")
-def get_main_dashboard_data():
-    users = load_data(USER_FILE)
-    restaurants = load_data(DATA_FILE)
-    
-    follower_counts = {}
-    for u in users:
-        for followed_user in u.get("following", []):
-            follower_counts[followed_user] = follower_counts.get(followed_user, 0) + 1
-    
-    all_editors = []
-    for u in users:
-        uname = u.get("nickname") or u["username"] 
-        all_editors.append({
-            "username": u["username"],
-            "display_name": uname,
-            "followers": follower_counts.get(u["username"], 0),
-            "following": u.get("following", []),
-            "rest_count": sum(1 for r in restaurants if r.get("owner") == u["username"])
-        })
-    
-    all_editors = sorted(all_editors, key=lambda x: x["followers"], reverse=True)
-    national_top_50 = [e["username"] for e in all_editors[:50]]
-    
-    regions = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기", "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"]
-    regional_top_10 = {}
-    for reg in regions:
-        reg_owners = set(r["owner"] for r in restaurants if r.get("address", "").startswith(reg))
-        reg_editors = [e["username"] for e in all_editors if e["username"] in reg_owners]
-        regional_top_10[reg] = reg_editors[:10]
+class ImageUpdateRequest(BaseModel):
+    image_url: str
 
-    new_restaurants = restaurants[-10:][::-1]
-
-    pop_map = {}
-    for r in restaurants:
-        key = r.get("kakao_id") or r.get("name")
-        if key not in pop_map:
-            pop_map[key] = {"id": r["id"], "name": r["name"], "category": r["category"], "image_url": r.get("image_url"), "address": r.get("address"), "owner": r.get("owner"), "save_count": 0}
-        pop_map[key]["save_count"] += 1
+# =========================================================
+# [4] 🚨 핵심: 소셜 로그인 전용 통신 로직
+# =========================================================
+@app.post("/login/social")
+async def social_login(req: SocialLoginRequest):
+    users = load_db(USERS_DB, {})
     
-    popular_places = sorted(pop_map.values(), key=lambda x: x["save_count"], reverse=True)[:10]
+    user_id = None
+    email = None
+    display_name = None
+    profile_image = None
+    
+    # [A] 카카오 토큰 검증
+    if req.provider == "kakao":
+        headers = {"Authorization": f"Bearer {req.token}"}
+        resp = requests.get("https://kapi.kakao.com/v2/user/me", headers=headers)
+        if resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="유효하지 않은 카카오 토큰입니다.")
+        kakao_data = resp.json()
+        user_id = f"kakao_{kakao_data.get('id')}"
+        
+        kakao_account = kakao_data.get("kakao_account", {})
+        profile = kakao_account.get("profile", {})
+        display_name = profile.get("nickname", "카카오유저")
+        profile_image = profile.get("profile_image_url", "")
+        
+    # [B] 구글 토큰 검증
+    elif req.provider == "google":
+        resp = requests.get(f"https://oauth2.googleapis.com/tokeninfo?id_token={req.token}")
+        if resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="유효하지 않은 구글 토큰입니다.")
+        google_data = resp.json()
+        
+        if google_data.get("aud") != GOOGLE_CLIENT_ID:
+            raise HTTPException(status_code=401, detail="구글 Client ID가 일치하지 않습니다.")
+            
+        user_id = f"google_{google_data.get('sub')}"
+        display_name = google_data.get("name", "구글유저")
+        profile_image = google_data.get("picture", "")
+    
+    else:
+        raise HTTPException(status_code=400, detail="지원하지 않는 소셜 로그인입니다.")
+
+    # [C] 신규 유저일 경우 DB에 자동 등록 (회원가입 과정 생략)
+    if user_id not in users:
+        users[user_id] = {
+            "password": "social_login_user", # 소셜 유저는 비밀번호 불필요
+            "following": [],
+            "followers": 0,
+            "display_name": display_name,
+            "profile_image": profile_image,
+            "philosophy": "",
+            "taste_tags": [],
+            "personal_info": "",
+            "badges": ["뉴비 미식가 🌱"]
+        }
+        save_db(USERS_DB, users)
+        print(f"[소셜가입 완료] 새로운 유저 등록: {user_id}")
 
     return {
-        "all_editors": all_editors,
-        "national_top_50": national_top_50,
-        "regional_top_10": regional_top_10,
-        "new_restaurants": new_restaurants,
-        "popular_places": popular_places
+        "message": "로그인 성공", 
+        "username": user_id, 
+        "display_name": users[user_id].get("display_name"),
+        "following": users[user_id].get("following", [])
     }
 
+# =========================================================
+# [5] 프로필 및 유저 데이터 조회 로직
+# =========================================================
 @app.get("/users/profiles")
-def get_user_profiles():
-    users = load_data(USER_FILE)
-    return {u["username"]: u.get("profile_image") for u in users}
-
-# ==========================================
-# 🔐 인증, 프로필, 알림 관리 시스템
-# ==========================================
-@app.post("/signup")
-def signup(user: UserAuth):
-    users = load_data(USER_FILE)
-    if any(u["username"] == user.username for u in users): raise HTTPException(status_code=400, detail="이미 등록된 아이디입니다.")
-    hashed = bcrypt.hashpw(user.password[:72].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    users.append({
-        "username": user.username, 
-        "password": hashed, 
-        "following": [], 
-        "notifications": [], # 🌟 알림 배열 초기화
-        "profile_image": None,
-        "nickname": user.username, 
-        "personal_info": "",
-        "philosophy": "",
-        "taste_tags": []
-    })
-    save_data(USER_FILE, users)
-    return {"message": "주주명부 등재 완료!"}
-
-@app.post("/login")
-def login(user: UserAuth):
-    users = load_data(USER_FILE)
-    for u in users:
-        if u["username"] == user.username:
-            if bcrypt.checkpw(user.password[:72].encode('utf-8'), u["password"].encode('utf-8')):
-                return {"message": "인증 성공", "username": u["username"], "following": u.get("following", [])}
-    raise HTTPException(status_code=401, detail="아이디 또는 비밀번호 불일치")
+async def get_all_profiles():
+    users = load_db(USERS_DB, {})
+    profiles = {}
+    for uid, udata in users.items():
+        if udata.get("profile_image"):
+            profiles[uid] = udata["profile_image"]
+    return profiles
 
 @app.post("/user/profile-image")
-def upload_profile_image(request: Request, image: UploadFile=File(...), user_id: str=Header(...)):
-    users = load_data(USER_FILE)
-    me = next((u for u in users if u["username"] == user_id), None)
-    if not me: raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
-    
-    fname = f"profile_{uuid.uuid4().hex}{os.path.splitext(image.filename)[1]}"
-    with open(f"images/{fname}", "wb") as b: shutil.copyfileobj(image.file, b)
-    img_url = f"{request.base_url}images/{fname}"
-    
-    me["profile_image"] = img_url
-    save_data(USER_FILE, users)
-    return {"profile_image": img_url}
+async def upload_profile_image(request: Request, image: UploadFile = File(...)):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    users = load_db(USERS_DB, {})
+    if user_id not in users:
+        raise HTTPException(status_code=404, detail="유저를 찾을 수 없습니다.")
+
+    file_extension = image.filename.split(".")[-1]
+    file_name = f"profile_{user_id}_{uuid.uuid4().hex[:8]}.{file_extension}"
+    file_path = os.path.join("images", file_name)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    image_url = f"/images/{file_name}"
+    users[user_id]["profile_image"] = image_url
+    save_db(USERS_DB, users)
+
+    return {"message": "프로필 이미지 업데이트 성공", "image_url": image_url}
 
 @app.put("/user/update-profile")
-def update_user_profile(payload: ProfileUpdate, user_id: str = Header(...)):
-    users = load_data(USER_FILE)
-    me = next((u for u in users if u["username"] == user_id), None)
-    if not me: 
-        raise HTTPException(status_code=404, detail="사용자를 찾을 수 없습니다.")
-    
-    me["nickname"] = payload.nickname
-    me["personal_info"] = payload.personal_info
-    me["philosophy"] = payload.philosophy
-    me["taste_tags"] = payload.taste_tags
-    
-    save_data(USER_FILE, users)
-    return {"message": "프로필 업데이트 완료"}
-
-# 🌟 NEW: 알림 가져오기 및 읽음 처리
-@app.get("/notifications")
-def get_notifications(user_id: str = Header(...)):
-    users = load_data(USER_FILE)
-    me = next((u for u in users if u["username"] == user_id), None)
-    if not me: raise HTTPException(status_code=404)
-    notis = me.get("notifications", [])
-    unread_count = sum(1 for n in notis if not n["read"])
-    # 최신 알림이 위로 오게 뒤집어서 리턴
-    return {"notifications": notis[::-1], "unread_count": unread_count}
-
-@app.put("/notifications/read")
-def mark_notifications_read(user_id: str = Header(...)):
-    users = load_data(USER_FILE)
-    me = next((u for u in users if u["username"] == user_id), None)
-    if not me: raise HTTPException(status_code=404)
-    for n in me.get("notifications", []):
-        n["read"] = True
-    save_data(USER_FILE, users)
-    return {"message": "All read"}
-
-@app.post("/follow/{target_user}")
-def toggle_follow(target_user: str, user_id: str = Header(...)):
-    users = load_data(USER_FILE)
-    me = next((u for u in users if u["username"] == user_id), None)
-    if not me: raise HTTPException(status_code=404)
-    if "following" not in me: me["following"] = []
-    
-    if target_user in me["following"]: 
-        me["following"].remove(target_user)
-    else: 
-        me["following"].append(target_user)
-        # 🌟 알림 트리거: 팔로우 시 알림 발송
-        send_notification(target_user, f"👤 {user_id}님이 회원님을 팔로우하기 시작했습니다.", "follow")
+async def update_profile(req: ProfileUpdateRequest, request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
         
-    save_data(USER_FILE, users)
-    return {"following": me["following"]}
+    users = load_db(USERS_DB, {})
+    if user_id not in users:
+        raise HTTPException(status_code=404, detail="유저 없음")
 
-# ==========================================
-# 🍽️ 레스토랑 CRUD 및 다중 사진 업로드
-# ==========================================
-@app.get("/search/kakao")
-def search_kakao(query: str):
-    url = "https://dapi.kakao.com/v2/local/search/keyword.json"
-    res = requests.get(url, headers={"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}, params={"query": query})
-    return res.json()
-
-@app.get("/feed")
-def get_global_feed(): 
-    return {"status": 200, "data": load_data(DATA_FILE)}
-
-@app.get("/restaurants")
-def get_my_restaurants(user_id: str = Header(None)):
-    data = load_data(DATA_FILE)
-    return {"status": 200, "data": [r for r in data if r.get("owner") == user_id]}
-
-@app.get("/profile/stats")
-def get_profile_stats(user_id: str = Header(...)):
-    data = load_data(DATA_FILE)
-    my = [r for r in data if r.get("owner") == user_id]
-    stats = {key: {"count": 0, "limit": val} for key, val in TIER_LIMITS.items()}
-    for r in my:
-        t = r.get("tier")
-        if t in stats: stats[t]["count"] += 1
-    return {"status": 200, "stats": stats}
-
-@app.get("/guide/{target_user}")
-def get_user_guide(target_user: str):
-    data = load_data(DATA_FILE)
-    users = load_data(USER_FILE)
+    users[user_id]["display_name"] = req.nickname
+    users[user_id]["personal_info"] = req.personal_info
+    users[user_id]["philosophy"] = req.philosophy
+    users[user_id]["taste_tags"] = req.taste_tags
     
-    user_info = next((u for u in users if u["username"] == target_user), {})
-    nickname = user_info.get("nickname") or target_user
-    personal_info = user_info.get("personal_info") or ""
-    philosophy = user_info.get("philosophy") or ""
-    taste_tags = user_info.get("taste_tags") or []
-
-    guide = {key: [] for key in TIER_LIMITS.keys()}
-    user_rests = []
+    save_db(USERS_DB, users)
+    return {"message": "프로필이 성공적으로 업데이트되었습니다."}
+    # =========================================================
+# [6] 메인 화면 데이터 (홈, 네트워크)
+# =========================================================
+@app.get("/main/data")
+async def get_main_data():
+    users = load_db(USERS_DB, {})
+    rests = load_db(REST_DB, [])
     
-    for r in data:
-        if r.get("owner") == target_user:
-            user_rests.append(r)
-            if r.get("tier") in guide: 
-                guide[r["tier"]].append(r)
+    # 1. 에디터 목록 (게시물 수, 팔로워 수 등 계산)
+    editors = []
+    for uid, udata in users.items():
+        user_rests = [r for r in rests if r.get("owner") == uid]
+        editors.append({
+            "username": uid,
+            "display_name": udata.get("display_name", uid),
+            "followers": udata.get("followers", 0),
+            "following": udata.get("following", []),
+            "rest_count": len(user_rests)
+        })
+    
+    # 팔로워 순으로 정렬하여 전국 탑 50 추출
+    editors_sorted = sorted(editors, key=lambda x: x["followers"], reverse=True)
+    national_top_50 = [e["username"] for e in editors_sorted[:50]]
+    
+    # 2. 인기 맛집 포트폴리오 (가장 많이 저장된 곳 기준)
+    place_counts = {}
+    for r in rests:
+        kid = r.get("kakao_id")
+        if kid:
+            if kid not in place_counts:
+                place_counts[kid] = r.copy()
+                place_counts[kid]["save_count"] = 1
+            else:
+                place_counts[kid]["save_count"] += 1
                 
-    badges = []
-    if len(user_rests) >= 1: badges.append("🐣 퍼슐 비기너")
-    if len(user_rests) >= 5: badges.append("🔥 열혈 탐험가")
-    if any(r.get("tier") == "⭐⭐⭐ (3스타)" for r in user_rests): badges.append("👑 3스타 발굴자")
-        
-    categories = [r.get("category", "") for r in user_rests]
-    if sum(1 for c in categories if "고기" in c or "구이" in c or "돼지" in c or "소" in c) >= 3: badges.append("🥩 육식주의자")
-    if sum(1 for c in categories if "카페" in c or "디저트" in c) >= 3: badges.append("🍰 디저트 러버")
-    if sum(1 for c in categories if "일식" in c or "스시" in c) >= 3: badges.append("🍣 일식 마스터")
+    popular_places = sorted(place_counts.values(), key=lambda x: x.get("save_count", 0), reverse=True)[:10]
+    
+    # 3. 최근 등록된 식당 (최신순 10개)
+    new_restaurants = list(reversed(rests))[:10]
 
-    if not badges: badges.append("🍽️ 미식 탐험가")
-    badges = list(set(badges))[:3]
-        
     return {
-        "status": 200, 
-        "guide": guide, 
-        "nickname": nickname, 
-        "personal_info": personal_info,
-        "philosophy": philosophy,
-        "taste_tags": taste_tags,
-        "badges": badges
+        "all_editors": editors_sorted,
+        "national_top_50": national_top_50,
+        "regional_top_10": {}, # 고도화 시 지역별 분류 데이터 삽입 지점
+        "popular_places": popular_places,
+        "new_restaurants": new_restaurants
     }
 
-@app.put("/restaurants/{restaurant_id}")
-def update_tier(restaurant_id: str, payload: TierUpdate, user_id: str = Header(...)):
-    data = load_data(DATA_FILE)
-    target = next((r for r in data if r.get("id") == restaurant_id and r.get("owner") == user_id), None)
-    if not target: raise HTTPException(status_code=403)
-    if payload.tier in TIER_LIMITS:
-        cnt = sum(1 for r in data if r.get("owner") == user_id and r.get("tier") == payload.tier and r.get("id") != restaurant_id)
-        if cnt >= TIER_LIMITS[payload.tier]: raise HTTPException(status_code=400, detail=f"한도 초과")
-    target["tier"] = payload.tier
-    save_data(DATA_FILE, data)
-    return {"message": "평가 완료!"}
-
-@app.delete("/restaurants/{restaurant_id}")
-def delete_restaurant(restaurant_id: str, user_id: str = Header(...)):
-    data = load_data(DATA_FILE)
-    target_idx = next((i for i, r in enumerate(data) if r.get("id") == restaurant_id and r.get("owner") == user_id), None)
-    if target_idx is None: raise HTTPException(status_code=403, detail="삭제 권한이 없습니다.")
-    del data[target_idx]
-    save_data(DATA_FILE, data)
-    return {"message": "기록이 정상적으로 삭제되었습니다."}
-
-# 🌟 NEW: 다중 사진 업로드 지원 (List[UploadFile])
-@app.post("/restaurants")
-def add_restaurant(
-    request: Request, 
-    name: str=Form(...), category: str=Form(...), comment: str=Form(""), 
-    address: str=Form(""), kakao_id: str=Form(""), x: str=Form(""), y: str=Form(""), 
-    images: List[UploadFile]=File(None), # 다중 리스트로 변경
-    user_id: str=Header(...)
-):
-    data = load_data(DATA_FILE)
-    img_urls = []
+# =========================================================
+# [7] 랭킹 시스템 (메뉴 및 장소 검색)
+# =========================================================
+@app.get("/ranking")
+async def get_ranking(keyword: str = ""):
+    rests = load_db(REST_DB, [])
     
-    # 전달받은 이미지가 있으면 모두 저장
-    if images and images[0].filename:
-        for img in images:
-            fname = f"{uuid.uuid4().hex}{os.path.splitext(img.filename)[1]}"
-            with open(f"images/{fname}", "wb") as b: shutil.copyfileobj(img.file, b)
-            img_urls.append(f"{request.base_url}images/{fname}")
+    place_counts = {}
+    for r in rests:
+        kid = r.get("kakao_id")
+        if not kid:
+            continue
             
-    # 첫 번째 이미지를 대표(image_url)로, 전체를 배열(image_urls)로 저장
-    main_img = img_urls[0] if img_urls else None
-
-    data.append({
-        "id": str(uuid.uuid4())[:8], "name": name, "category": category, "comment": comment, 
-        "address": address, "kakao_id": kakao_id, "x": x, "y": y, "tier": None, 
-        "image_url": main_img, "image_urls": img_urls, # 🌟 다중 URL 배열 추가
-        "owner": user_id, "likes": [], "comments": []
-    })
-    save_data(DATA_FILE, data)
-    return {"status": 201}
-
-# ==========================================
-# 🌟 소셜 기능 API (알림 트리거 추가)
-# ==========================================
-@app.post("/restaurants/bookmark/{restaurant_id}")
-def bookmark_restaurant(restaurant_id: str, user_id: str = Header(...)):
-    data = load_data(DATA_FILE)
-    original = next((r for r in data if r.get("id") == restaurant_id), None)
-    if not original: raise HTTPException(status_code=404)
-    if any(r.get("owner") == user_id and r.get("kakao_id") == original.get("kakao_id") for r in data):
-        raise HTTPException(status_code=400, detail="이미 내 가이드에 존재하는 식당입니다.")
-    
-    new_entry = original.copy()
-    new_entry["id"] = str(uuid.uuid4())[:8]; new_entry["owner"] = user_id; new_entry["tier"] = None; new_entry["likes"] = []; new_entry["comments"] = []
-    data.append(new_entry)
-    save_data(DATA_FILE, data)
-    
-    # 🌟 알림: 내 식당을 누군가 북마크했을 때
-    if original["owner"] != user_id:
-        send_notification(original["owner"], f"🔖 {user_id}님이 회원님의 '{original['name']}'을(를) 위시리스트에 담았습니다.", "bookmark")
-
-    return {"message": "위시리스트에 담았습니다!"}
-
-@app.post("/restaurants/{restaurant_id}/like")
-def toggle_like(restaurant_id: str, user_id: str = Header(...)):
-    data = load_data(DATA_FILE)
-    target = next((r for r in data if r.get("id") == restaurant_id), None)
-    if not target: raise HTTPException(status_code=404)
-    if "likes" not in target: target["likes"] = []
-    
-    if user_id in target["likes"]: 
-        target["likes"].remove(user_id); liked = False
-    else: 
-        target["likes"].append(user_id); liked = True
-        # 🌟 알림: 내 식당에 좋아요를 눌렀을 때
-        if target["owner"] != user_id:
-            send_notification(target["owner"], f"❤️ {user_id}님이 회원님의 '{target['name']}' 기록을 좋아합니다.", "like")
+        # 키워드 검색 필터링 (식당 이름, 카테고리, 주소 대상)
+        match = False
+        if keyword.lower() in r.get("name", "").lower() or \
+           keyword.lower() in r.get("category", "").lower() or \
+           keyword.lower() in r.get("address", "").lower():
+            match = True
             
-    save_data(DATA_FILE, data)
-    return {"liked": liked, "likes_count": len(target["likes"])}
+        if keyword == "" or match:
+            if kid not in place_counts:
+                place_counts[kid] = r.copy()
+                place_counts[kid]["save_count"] = 1
+            else:
+                place_counts[kid]["save_count"] += 1
+                
+    ranking = sorted(place_counts.values(), key=lambda x: x["save_count"], reverse=True)
+    return {"ranking": ranking}
 
-@app.post("/restaurants/{restaurant_id}/comment")
-def add_comment(restaurant_id: str, payload: CommentInput, user_id: str = Header(...)):
-    data = load_data(DATA_FILE)
-    target = next((r for r in data if r.get("id") == restaurant_id), None)
-    if not target: raise HTTPException(status_code=404)
-    if "comments" not in target: target["comments"] = []
-    target["comments"].append({"user": user_id, "text": payload.text})
-    save_data(DATA_FILE, data)
+# =========================================================
+# [8] 피드 (실시간 리뷰)
+# =========================================================
+@app.get("/feed")
+async def get_feed():
+    rests = load_db(REST_DB, [])
+    # 가장 최근에 등록된 데이터가 화면에 먼저 나오도록 설계
+    return {"data": rests}
+
+# =========================================================
+# [9] 특정 유저의 맛집 조회 (서열표, 프로필)
+# =========================================================
+@app.get("/restaurants")
+async def get_restaurants(request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
     
-    # 🌟 알림: 내 식당에 방명록을 남겼을 때
-    if target["owner"] != user_id:
-        send_notification(target["owner"], f"💬 {user_id}님이 '{target['name']}'에 방명록을 남겼습니다: {payload.text[:10]}...", "comment")
+    rests = load_db(REST_DB, [])
+    user_rests = [r for r in rests if r.get("owner") == user_id]
+    return {"data": user_rests}
+
+@app.get("/guide/{username}")
+async def get_guide(username: str):
+    rests = load_db(REST_DB, [])
+    users = load_db(USERS_DB, {})
+    
+    user_data = users.get(username, {})
+    user_rests = [r for r in rests if r.get("owner") == username]
+    
+    # 서열표 기본 템플릿
+    guide = {
+        "⭐⭐⭐ (3스타)": [],
+        "⭐⭐ (2스타)": [],
+        "⭐ (1스타)": [],
+        "단순 추천": [],
+        "평가 대기 중 ⏳": []
+    }
+    
+    # 등록된 맛집을 티어별로 분류
+    for r in user_rests:
+        tier = r.get("tier", "")
+        if tier in guide:
+            guide[tier].append(r)
+        else:
+            guide["평가 대기 중 ⏳"].append(r)
+            
+    return {
+        "guide": guide,
+        "nickname": user_data.get("display_name", username),
+        "philosophy": user_data.get("philosophy", ""),
+        "taste_tags": user_data.get("taste_tags", []),
+        "personal_info": user_data.get("personal_info", ""),
+        "badges": user_data.get("badges", [])
+    }
+
+@app.get("/profile/stats")
+async def get_profile_stats(request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
         
-    return {"comments": target["comments"]}
+    rests = load_db(REST_DB, [])
+    user_rests = [r for r in rests if r.get("owner") == user_id]
+    
+    stats = {
+        "3 STARS": {"count": 0},
+        "2 STARS": {"count": 0},
+        "1 STAR": {"count": 0},
+        "RECOMMENDED": {"count": 0}
+    }
+    
+    for r in user_rests:
+        tier = r.get("tier", "")
+        if "3스타" in tier:
+            stats["3 STARS"]["count"] += 1
+        elif "2스타" in tier:
+            stats["2 STARS"]["count"] += 1
+        elif "1스타" in tier:
+            stats["1 STAR"]["count"] += 1
+        elif "단순 추천" in tier:
+            stats["RECOMMENDED"]["count"] += 1
+            
+    return {"stats": stats}
+    # =========================================================
+# [10] 외부 API 연동 (카카오 장소 검색 및 이미지 검색)
+# =========================================================
+@app.get("/search/kakao")
+async def search_kakao(query: str):
+    url = "https://dapi.kakao.com/v2/local/search/keyword.json"
+    headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
+    params = {"query": query, "size": 15}
+    
+    resp = requests.get(url, headers=headers, params=params)
+    if resp.status_code == 200:
+        return resp.json()
+    return {"documents": []}
 
-@app.get("/restaurants/{restaurant_id}/ai-images")
-def get_ai_images(restaurant_id: str, name: str):
+@app.get("/restaurants/{rest_id}/ai-images")
+async def get_ai_images(rest_id: str, name: str):
+    # 식당 이름으로 카카오 이미지 검색을 호출하여 고화질 사진 후보를 제공
     url = "https://dapi.kakao.com/v2/search/image"
     headers = {"Authorization": f"KakaoAK {KAKAO_REST_API_KEY}"}
-    params = {"query": f"{name} 다이닝", "size": 4} 
+    params = {"query": f"{name} 식당", "size": 10}
+    
     try:
-        res = requests.get(url, headers=headers, params=params)
-        images = [doc["image_url"] for doc in res.json().get("documents", [])]
-    except Exception as e: images = []
-    if not images:
-        images = ["https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80", "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80"]
-    return {"images": images}
+        resp = requests.get(url, headers=headers, params=params)
+        if resp.status_code == 200:
+            data = resp.json()
+            images = [doc['image_url'] for doc in data.get('documents', [])]
+            return {"images": images}
+        return {"images": []}
+    except:
+        return {"images": []}
 
-@app.put("/restaurants/{restaurant_id}/image")
-def update_restaurant_image(restaurant_id: str, payload: ImageUpdate, user_id: str = Header(...)):
-    data = load_data(DATA_FILE)
-    target = next((r for r in data if r.get("id") == restaurant_id and r.get("owner") == user_id), None)
-    if not target: raise HTTPException(status_code=403, detail="권한이 없습니다.")
-    target["image_url"] = payload.image_url
-    save_data(DATA_FILE, data)
-    return {"message": "Success"}
+# =========================================================
+# [11] 맛집 등록, 수정, 삭제 (CRUD)
+# =========================================================
+@app.post("/restaurants")
+async def add_restaurant(
+    request: Request,
+    name: str = Form(...),
+    category: str = Form(...),
+    address: str = Form(...),
+    kakao_id: str = Form(""),
+    x: str = Form(""),
+    y: str = Form(""),
+    comment: str = Form(""),
+    images: List[UploadFile] = File(None)
+):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
 
-@app.get("/ranking")
-def get_restaurant_ranking(keyword: str = ""):
-    data = load_data(DATA_FILE)
-    filtered_data = data
-    if keyword:
-        kw = keyword.lower()
-        filtered_data = [
-            r for r in data 
-            if kw in r.get("name", "").lower() 
-            or kw in r.get("category", "").lower() 
-            or kw in r.get("comment", "").lower()
-        ]
-    ranking_map = {}
-    for r in filtered_data:
-        key = r.get("kakao_id") or r.get("name")
-        if key not in ranking_map:
-            ranking_map[key] = {
-                "id": r.get("id"), "kakao_id": r.get("kakao_id"), "name": r.get("name"),
-                "category": r.get("category"), "address": r.get("address"), "image_url": r.get("image_url"), "save_count": 0
-            }
-        ranking_map[key]["save_count"] += 1
-    ranked_list = sorted(ranking_map.values(), key=lambda x: x["save_count"], reverse=True)
-    return {"status": 200, "ranking": ranked_list[:50]}
+    # 1. 다중 사진 업로드 처리
+    image_urls = []
+    if images and len(images) > 0 and images[0].filename != '':
+        for img in images:
+            file_extension = img.filename.split(".")[-1]
+            file_name = f"rest_{uuid.uuid4().hex[:12]}.{file_extension}"
+            file_path = os.path.join("images", file_name)
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(img.file, buffer)
+            image_urls.append(f"/images/{file_name}")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    main_image = image_urls[0] if image_urls else ""
+
+    # 2. 데이터 생성
+    rest_data = {
+        "id": str(uuid.uuid4()),
+        "owner": user_id,
+        "name": name,
+        "category": category,
+        "address": address,
+        "kakao_id": kakao_id,
+        "x": x,
+        "y": y,
+        "comment": comment,
+        "tier": "", # 기본값은 빈 문자열 (위시리스트)
+        "image_url": main_image,
+        "image_urls": image_urls,
+        "likes": [],
+        "comments": [],
+        "created_at": datetime.now().isoformat()
+    }
+
+    # 3. DB 저장
+    rests = load_db(REST_DB, [])
+    rests.append(rest_data)
+    save_db(REST_DB, rests)
+
+    return {"message": "성공적으로 추가되었습니다.", "id": rest_data["id"]}
+
+@app.put("/restaurants/{rest_id}")
+async def update_tier(rest_id: str, req: TierUpdateRequest, request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    rests = load_db(REST_DB, [])
+    for r in rests:
+        if r["id"] == rest_id and r["owner"] == user_id:
+            r["tier"] = req.tier
+            save_db(REST_DB, rests)
+            return {"message": "등급이 변경되었습니다."}
+            
+    raise HTTPException(status_code=404, detail="맛집을 찾을 수 없거나 권한이 없습니다.")
+
+@app.put("/restaurants/{rest_id}/image")
+async def update_restaurant_image(rest_id: str, req: ImageUpdateRequest, request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    rests = load_db(REST_DB, [])
+    for r in rests:
+        if r["id"] == rest_id and r["owner"] == user_id:
+            r["image_url"] = req.image_url
+            if req.image_url not in r.get("image_urls", []):
+                urls = r.get("image_urls", [])
+                urls.insert(0, req.image_url)
+                r["image_urls"] = urls
+            save_db(REST_DB, rests)
+            return {"message": "사진이 성공적으로 교체되었습니다."}
+            
+    raise HTTPException(status_code=404, detail="수정 권한이 없습니다.")
+
+@app.delete("/restaurants/{rest_id}")
+async def delete_restaurant(rest_id: str, request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    rests = load_db(REST_DB, [])
+    original_len = len(rests)
+    
+    rests = [r for r in rests if not (r["id"] == rest_id and r["owner"] == user_id)]
+    
+    if len(rests) == original_len:
+        raise HTTPException(status_code=404, detail="삭제할 대상이 없거나 권한이 없습니다.")
+        
+    save_db(REST_DB, rests)
+    return {"message": "성공적으로 삭제되었습니다."}
+
+# =========================================================
+# [12] 소셜 네트워킹 (팔로우, 북마크, 좋아요, 방명록)
+# =========================================================
+def add_notification(user_id, noti_type, message):
+    notis = load_db(NOTI_DB, {})
+    if user_id not in notis:
+        notis[user_id] = []
+    
+    notis[user_id].insert(0, {
+        "id": str(uuid.uuid4()),
+        "type": noti_type,
+        "message": message,
+        "read": False,
+        "created_at": datetime.now().isoformat()
+    })
+    
+    # 알림이 너무 길어지지 않게 50개 유지
+    notis[user_id] = notis[user_id][:50]
+    save_db(NOTI_DB, notis)
+
+@app.post("/follow/{target_user}")
+async def toggle_follow(target_user: str, request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id or user_id == target_user:
+        raise HTTPException(status_code=400, detail="잘못된 요청입니다.")
+
+    users = load_db(USERS_DB, {})
+    if target_user not in users:
+        raise HTTPException(status_code=404, detail="대상을 찾을 수 없습니다.")
+
+    following_list = users[user_id].get("following", [])
+    
+    if target_user in following_list:
+        following_list.remove(target_user)
+        users[target_user]["followers"] -= 1
+    else:
+        following_list.append(target_user)
+        users[target_user]["followers"] += 1
+        users[user_id]["badges"].append(f"{target_user}님의 팬")
+        add_notification(target_user, "follow", f"🤝 {user_id}님이 회원님을 팔로우합니다.")
+
+    users[user_id]["following"] = following_list
+    save_db(USERS_DB, users)
+    
+    return {"following": following_list}
+
+@app.post("/restaurants/bookmark/{rest_id}")
+async def bookmark_restaurant(rest_id: str, request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    rests = load_db(REST_DB, [])
+    target = next((r for r in rests if r["id"] == rest_id), None)
+    
+    if not target:
+        raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다.")
+        
+    # 북마크 기능을 통해 내 리스트로 복사
+    new_rest = target.copy()
+    new_rest["id"] = str(uuid.uuid4())
+    new_rest["owner"] = user_id
+    new_rest["tier"] = "" # 내 위시리스트로 이동
+    new_rest["likes"] = []
+    new_rest["comments"] = []
+    
+    rests.append(new_rest)
+    save_db(REST_DB, rests)
+    
+    add_notification(target["owner"], "bookmark", f"📌 {user_id}님이 회원님의 '{target['name']}' 기록을 위시리스트에 담았습니다.")
+    
+    return {"message": f"[{target['name']}]을 내 위시리스트에 담았습니다!"}
+
+@app.post("/restaurants/{rest_id}/like")
+async def toggle_like(rest_id: str, request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    rests = load_db(REST_DB, [])
+    for r in rests:
+        if r["id"] == rest_id:
+            likes = r.get("likes", [])
+            if user_id in likes:
+                likes.remove(user_id)
+                liked = False
+            else:
+                likes.append(user_id)
+                liked = True
+                if r["owner"] != user_id:
+                    add_notification(r["owner"], "like", f"❤️ {user_id}님이 '{r['name']}' 게시물을 좋아합니다.")
+            
+            r["likes"] = likes
+            save_db(REST_DB, rests)
+            return {"liked": liked, "likes_count": len(likes)}
+            
+    raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다.")
+
+@app.post("/restaurants/{rest_id}/comment")
+async def add_comment(rest_id: str, req: CommentRequest, request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    rests = load_db(REST_DB, [])
+    for r in rests:
+        if r["id"] == rest_id:
+            comments = r.get("comments", [])
+            new_comment = {"user": user_id, "text": req.text, "time": datetime.now().isoformat()}
+            comments.append(new_comment)
+            r["comments"] = comments
+            save_db(REST_DB, rests)
+            
+            if r["owner"] != user_id:
+                add_notification(r["owner"], "comment", f"💬 {user_id}님이 '{r['name']}'에 방명록을 남겼습니다: {req.text}")
+                
+            return {"comments": comments}
+            
+    raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다.")
+
+# =========================================================
+# [13] 알림 시스템
+# =========================================================
+@app.get("/notifications")
+async def get_notifications(request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    notis = load_db(NOTI_DB, {})
+    user_notis = notis.get(user_id, [])
+    unread_count = sum(1 for n in user_notis if not n.get("read"))
+    
+    return {"notifications": user_notis, "unread_count": unread_count}
+
+@app.put("/notifications/read")
+async def read_notifications(request: Request):
+    user_id = request.headers.get('user-id')
+    if not user_id:
+        raise HTTPException(status_code=401, detail="권한 없음")
+        
+    notis = load_db(NOTI_DB, {})
+    if user_id in notis:
+        for n in notis[user_id]:
+            n["read"] = True
+        save_db(NOTI_DB, notis)
+        
+    return {"message": "알림 읽음 처리 완료"}
+    
