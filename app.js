@@ -69,6 +69,9 @@ let previewMarker = null;
 let nationalTop50 = [];
 let regionalTop10 = {};
 
+// 🚨 [추가] 뒤로가기용 탭 히스토리 추적 배열
+let tabHistory = ['home'];
+
 // =========================================================
 // [1.5] 소셜 로그인 엔진 (카카오/구글) & 일반 로그인
 // =========================================================
@@ -107,23 +110,17 @@ window.handleGoogleLogin = function(response) {
     window.handleSocialLoginServer('google', response.credential);
 };
 
-// 🚨 [해결] Capacitor 플러그인을 활용한 완벽한 네이티브 구글 로그인 함수
 window.triggerGoogleLogin = async function() {
     try {
-        // 모바일 앱 환경인지 확인
         if (typeof Capacitor !== 'undefined' && Capacitor.Plugins.GoogleAuth) {
-            
-            // 구글 플러그인 초기화
             Capacitor.Plugins.GoogleAuth.initialize({
                 clientId: '725138598590-gjhd8dduh3ag3922il5pcrf15q1rjvvn.apps.googleusercontent.com',
                 scopes: ['profile', 'email'],
                 grantOfflineAccess: true,
             });
 
-            // 네이티브 구글 로그인 창 띄우기
             const googleUser = await Capacitor.Plugins.GoogleAuth.signIn();
             
-            // 로그인 성공 시 백엔드로 토큰 전송
             if (googleUser && googleUser.authentication) {
                 window.handleSocialLoginServer('google', googleUser.authentication.idToken);
             }
@@ -228,7 +225,6 @@ function getBadgeHtml(username) {
     return '';
 }
 
-// 🚨 [해결 3] 프로필 이미지 엑박 방지(onerror) 및 비율 고정(object-fit: cover) 완벽 적용
 function getAvatar(username) {
     let badge = getBadgeHtml(username);
     let imgHtml = '';
@@ -288,12 +284,19 @@ async function fetchUserProfiles() {
     }
 }
 
+// 🚨 [수정됨] 앱 환경(웹뷰)에서 파일 업로드가 막히는 현상을 해결하기 위해 강제 DOM 생성 방식 적용
 function triggerProfileUpload() {
     if (!currentProfileIsMe) return;
     
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
+    let input = document.getElementById('hidden-profile-upload');
+    if (!input) {
+        input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.id = 'hidden-profile-upload';
+        input.style.display = 'none';
+        document.body.appendChild(input);
+    }
     
     input.onchange = async function(e) {
         const file = e.target.files[0];
@@ -314,12 +317,15 @@ function triggerProfileUpload() {
                 await fetchUserProfiles(); 
                 fetchGuideView(localStorage.getItem('currentUser')); 
             } else { 
-                alert("업로드 권한이 없습니다."); 
+                alert("업로드 실패: 권한이 없거나 이미지 용량이 너무 큽니다."); 
             }
         } catch(error) { 
             alert("서버 통신 오류가 발생했습니다."); 
+        } finally {
+            input.value = ''; // 재사용을 위해 초기화
         }
     };
+    
     input.click();
 }
 
@@ -356,10 +362,16 @@ function changeGlobalRegion() {
     }
 }
 
-function switchTab(t, skipFetch = false) {
+// 🚨 [수정됨] 스와이프 뒤로가기를 위한 탭 히스토리 로직 추가
+function switchTab(t, skipFetch = false, isBack = false) {
     const user = localStorage.getItem('currentUser');
     const topBar = document.getElementById('main-top-bar');
     
+    // 히스토리 배열 업데이트 (뒤로가기 액션이 아닐 때만 쌓음)
+    if (!isBack && tabHistory[tabHistory.length - 1] !== t) {
+        tabHistory.push(t);
+    }
+
     if (t === 'home') topBar.classList.add('transparent');
     else topBar.classList.remove('transparent');
     
@@ -858,6 +870,9 @@ async function fetchGuideView(u, isForeign = false) {
             });
         });
 
+        // 🚨 [수정됨] 칭호(별/레벨) 아이콘 복구
+        const levelHtml = data.level ? data.level : '뉴비 미식가 🌱';
+
         const philosophyHtml = currentProfilePhilosophy 
             ? `<div class="profile-philosophy">"${currentProfilePhilosophy}"</div>` 
             : '';
@@ -892,8 +907,12 @@ async function fetchGuideView(u, isForeign = false) {
                         ${getAvatar(u)}
                     </div>
                     
-                    <div style="font-size:26px; font-weight:900; margin-bottom:8px; display:flex; justify-content:center; align-items:center; gap:8px; letter-spacing:-0.5px;">
+                    <div style="font-size:26px; font-weight:900; margin-bottom:4px; display:flex; justify-content:center; align-items:center; gap:8px; letter-spacing:-0.5px;">
                         <span id="display-profile-name">${data.nickname || u}</span>
+                    </div>
+                    
+                    <div style="font-size:14px; font-weight:600; color:var(--brand-yellow); margin-bottom: 16px;">
+                        ${levelHtml}
                     </div>
                     
                     ${philosophyHtml}
@@ -1339,7 +1358,7 @@ async function executeDeleteRestaurant() {
 }
 
 // =========================================================
-// [12] 식당 상세 정보 모달 제어 (별점 누락 복구)
+// [12] 식당 상세 정보 모달 제어
 // =========================================================
 function openRestDetail(name, category, address, comment, tier, kakao_id, img_url, owner, db_id, showGuestbook = false) {
     document.getElementById('restaurant-detail-modal').style.display = 'flex';
@@ -1838,7 +1857,7 @@ function renderComments(restaurant_id, comments) {
 }
 
 // =========================================================
-// [14] 로그인 및 앱 라이프사이클 관리 (🚨 유령 로그인 방지)
+// [14] 로그인 및 앱 라이프사이클 관리 
 // =========================================================
 
 function initApp() { 
@@ -1850,7 +1869,7 @@ function initApp() {
         switchTab('home'); 
         fetchNotifications(); 
     } else {
-        localStorage.removeItem('currentUser'); // 찌꺼기 데이터 확실하게 소거
+        localStorage.removeItem('currentUser'); 
         document.getElementById('login-section').style.display = 'flex';
         document.getElementById('main-content').style.display = 'none';
     }
@@ -1869,7 +1888,8 @@ function closeEditProfileModal() {
     document.getElementById('edit-profile-modal').style.display = 'none';
 }
 
-function submitProfileEdit() {
+// 🚨 [수정됨] 프로필 수정 에러 방지 (async/await 구조로 통일)
+async function submitProfileEdit() {
     const newName = document.getElementById('edit-nickname-input').value.trim();
     
     if (!newName) {
@@ -1884,31 +1904,32 @@ function submitProfileEdit() {
         return t !== ""; 
     });
     
-    document.getElementById('display-profile-name').innerText = newName;
-    
-    fetch(`${API_URL}/user/update-profile`, {
-        method: 'PUT',
-        headers: { 
-            'Content-Type': 'application/json', 
-            'user-id': localStorage.getItem('currentUser') 
-        },
-        body: JSON.stringify({ 
-            nickname: newName, 
-            personal_info: document.getElementById('edit-personal-info').value,
-            philosophy: document.getElementById('edit-philosophy-input').value.trim(),
-            taste_tags: tagsArray
-        })
-    }).then(function(res) {
+    try {
+        const res = await fetch(`${API_URL}/user/update-profile`, {
+            method: 'PUT',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'user-id': localStorage.getItem('currentUser') 
+            },
+            body: JSON.stringify({ 
+                nickname: newName, 
+                personal_info: document.getElementById('edit-personal-info').value,
+                philosophy: document.getElementById('edit-philosophy-input').value.trim(),
+                taste_tags: tagsArray
+            })
+        });
+
         if(res.ok) {
             alert(currentLang === 'ko' ? "프로필 정보가 성공적으로 업데이트되었습니다! ✨" : "Profile successfully updated! ✨");
             closeEditProfileModal();
             fetchGuideView(localStorage.getItem('currentUser')); 
         } else {
-            alert("프로필 수정 중 오류가 발생했습니다.");
+            alert("프로필 수정 중 서버 오류가 발생했습니다.");
         }
-    }).catch(function(e) {
+    } catch(e) {
         console.error("프로필 수정 에러", e);
-    });
+        alert("네트워크 통신 에러가 발생했습니다.");
+    }
 }
 
 // =========================================================
@@ -1939,3 +1960,51 @@ window.onload = function() {
         }
     }, 1800); 
 };
+
+
+// =========================================================
+// 🚀 [신규 추가] 스마트폰 스와이프 (우측으로 밀어 뒤로가기)
+// =========================================================
+let touchStartX = 0;
+let touchStartY = 0;
+let touchEndX = 0;
+let touchEndY = 0;
+
+window.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+    touchStartY = e.changedTouches[0].screenY;
+}, { passive: true });
+
+window.addEventListener('touchend', function(e) {
+    touchEndX = e.changedTouches[0].screenX;
+    touchEndY = e.changedTouches[0].screenY;
+    handleSwipe();
+}, { passive: true });
+
+function handleSwipe() {
+    const diffX = touchEndX - touchStartX;
+    const diffY = Math.abs(touchEndY - touchStartY);
+
+    // 사용자가 우측으로 90px 이상 밀었고, 위아래 흔들림이 60px 이하일 때만 동작 (뒤로 가기)
+    if (diffX > 90 && diffY < 60) {
+        
+        // 1순위: 열려있는 팝업 모달창이 있다면 우선적으로 닫기
+        let modalClosed = false;
+        const openModals = Array.from(document.querySelectorAll('.bottom-modal')).filter(m => window.getComputedStyle(m).display === 'flex' || window.getComputedStyle(m).display === 'block');
+        
+        if (openModals.length > 0) {
+            // 가장 위에 있는 (마지막) 모달을 닫습니다
+            const topModal = openModals[openModals.length - 1];
+            topModal.style.display = 'none';
+            modalClosed = true;
+            return;
+        }
+
+        // 2순위: 모달이 없다면 이전 탭(화면)으로 되돌아가기
+        if (!modalClosed && tabHistory.length > 1) {
+            tabHistory.pop(); // 현재 화면 기록 삭제
+            const prevTab = tabHistory[tabHistory.length - 1]; // 바로 이전 화면
+            switchTab(prevTab, false, true); // 이전 화면으로 이동
+        }
+    }
+}
