@@ -354,9 +354,21 @@ body, html {
 .editor-row::-webkit-scrollbar { display: none; }
 
 .editor-card { 
-    background: linear-gradient(160deg, rgba(255, 255, 255, 0.9) 0%, rgba(224, 242, 241, 0.5) 100%) !important;
-    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); padding: 24px 16px; border-radius: 20px; min-width: 130px; flex-shrink: 0; text-align: center; cursor: pointer; box-shadow: 0 10px 30px rgba(0, 40, 60, 0.08); border: 1px solid rgba(255, 255, 255, 0.8); scroll-snap-align: start; transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: rgba(255, 255, 255, 0.35) !important;
+    backdrop-filter: blur(20px); 
+    -webkit-backdrop-filter: blur(20px); 
+    padding: 24px 16px; 
+    border-radius: 24px; 
+    min-width: 130px; 
+    flex-shrink: 0; 
+    text-align: center; 
+    cursor: pointer; 
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.08); 
+    border: 1px solid rgba(255, 255, 255, 0.8); 
+    scroll-snap-align: start; 
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 .editor-card:active { transform: scale(0.96); }
 
 .editor-img-container { width: 64px; height: 64px; margin: 0 auto 12px; position: relative; border-radius: 50%; background: linear-gradient(45deg, var(--brand-primary), #FF8C60); padding: 3px; }

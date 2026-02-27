@@ -29,7 +29,7 @@ os.makedirs("images", exist_ok=True)
 app.mount("/images", StaticFiles(directory="images"), name="images")
 
 # 🚨 MongoDB 연결 (이전에 복사하신 실제 주소로 <db_password>를 변경하여 넣으세요)
-MONGO_URI = "mongodb+srv://chadson83:<ss11041104>@cluster0.fjcxowk.mongodb.net/?appName=Cluster0"
+MONGO_URI = "mongodb+srv://chadson83:ss10021002!!@cluster0.fjcxowk.mongodb.net/?appName=Cluster0"
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["perchel_db"]
 

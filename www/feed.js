@@ -54,7 +54,17 @@ async function fetchHomeData() {
             let html = '';
             list.forEach(r => {
                 const finalImg = getSmartRestImage(r.kakao_id, r.category, r.image_url);
-                let subInfoHtml = isPopular && r.save_count ? `🔥 ${r.save_count}명 등록` : `✍️ ${r.owner}`;
+                
+                let displayName = r.owner;
+                const ownerObj = (d.all_editors || []).find(e => e.username === r.owner);
+                if (ownerObj && ownerObj.display_name) {
+                    displayName = ownerObj.display_name;
+                }
+
+                let subInfoHtml = isPopular && r.save_count 
+                    ? `🔥 ${r.save_count}명 등록` 
+                    : `<div style="display:flex; align-items:center; gap:4px;">✍️ <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:80px; display:inline-block;">${displayName}</span></div>`;
+    
                 let bookmarkHtml = (r.owner !== localStorage.getItem('currentUser')) ? `
                     <div class="bookmark-btn-mini" onclick="event.stopPropagation(); executeBookmark('${r.id}')" style="position:absolute; bottom:8px; right:8px; background:rgba(255,255,255,0.9); padding:6px; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
                         <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:var(--brand-primary); fill:none; stroke-width:2;"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>

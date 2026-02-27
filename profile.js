@@ -15,24 +15,32 @@ function getBadgeHtml(username) {
 
 function getAvatar(username) {
     let badge = getBadgeHtml(username);
-    let imgHtml = '';
-    
-    if (userProfiles[username]) {
-        const fallbackHtml = `<div style='width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:var(--border-color);color:var(--brand-primary);font-weight:900;font-size:1.5em;text-transform:uppercase;'>${username ? username.charAt(0).toUpperCase() : '?'}</div>`;
-        imgHtml = `<img src="${userProfiles[username]}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML=\`${fallbackHtml}\`">`;
-    } else {
-        const initial = username ? username.charAt(0).toUpperCase() : '?';
-        imgHtml = `
-            <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--border-color); color: var(--brand-primary); font-weight: 900; font-size: 1.5em; text-transform: uppercase;">
-                ${initial}
-            </div>
+    let initial = username ? username.charAt(0).toUpperCase() : '?';
+    let imgSrc = userProfiles[username] ? userProfiles[username] : '';
+
+    // 사진이 없을 때 보여줄 기본 G/이니셜 화면
+    let fallbackHtml = `
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--border-color); color: var(--brand-primary); font-weight: 900; font-size: 1.5em; text-transform: uppercase;">
+            ${initial}
+        </div>
+    `;
+
+    let imgTag = '';
+    if (imgSrc) {
+        // 사진이 있으면 출력하고, 서버에러로 깨지면 즉시 fallback 표시
+        imgTag = `
+            <img src="${imgSrc}" style="width:100%; height:100%; object-fit:cover;" 
+                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div style="display:none; width:100%; height:100%;">${fallbackHtml}</div>
         `;
+    } else {
+        imgTag = fallbackHtml;
     }
-    
+
     return `
         <div style="position:relative; width:100%; height:100%;">
-            <div class="avatar-circle">
-                ${imgHtml}
+            <div class="avatar-circle" style="width:100%; height:100%; border-radius:50%; overflow:hidden;">
+                ${imgTag}
             </div>
             ${badge}
         </div>
@@ -63,10 +71,22 @@ function getSmartRestImage(id, category, userImg) {
     return 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80'; 
 }
 
+// 수정됨: 사진이 바로 바뀌지 않는 현상(캐시) 방지 코드 추가
 async function fetchUserProfiles() {
     try {
         const res = await fetch(`${API_URL}/users/profiles`);
-        if (res.ok) userProfiles = await res.json();
+        if (res.ok) {
+            const data = await res.json();
+            const timestamp = new Date().getTime(); // 현재 시간을 구함
+            
+            // 모든 프로필 이미지 URL 뒤에 시간을 붙여서 브라우저가 매번 새 사진으로 인식하게 만듦
+            for (let key in data) {
+                if (data[key] && !data[key].includes('?t=')) {
+                    data[key] = data[key] + '?t=' + timestamp;
+                }
+            }
+            userProfiles = data;
+        }
     } catch (error) {
         console.error("프로필 이미지를 불러오는데 실패했습니다.", error);
     }
@@ -101,7 +121,7 @@ function triggerProfileUpload() {
             
             if (res.ok) {
                 alert("프로필 사진이 성공적으로 변경되었습니다! 📸");
-                await fetchUserProfiles(); 
+                await fetchUserProfiles(); // 수정됨: 사진 업로드 후 강제 갱신 트리거 작동
                 fetchGuideView(localStorage.getItem('currentUser')); 
             } else { 
                 alert("업로드 실패: 권한이 없거나 이미지 용량이 너무 큽니다."); 

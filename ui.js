@@ -31,14 +31,9 @@ function changeGlobalRegion() {
     }
 }
 
-// 스와이프 뒤로가기를 위한 탭 히스토리 로직
-function switchTab(t, skipFetch = false, isBack = false) {
+function switchTab(t, skipFetch = false) {
     const user = localStorage.getItem('currentUser');
     const topBar = document.getElementById('main-top-bar');
-    
-    if (!isBack && tabHistory[tabHistory.length - 1] !== t) {
-        tabHistory.push(t);
-    }
 
     if (t === 'home') topBar.classList.add('transparent');
     else topBar.classList.remove('transparent');
@@ -191,7 +186,7 @@ window.onload = function() {
 };
 
 // =========================================================
-// 🚀 스마트폰 스와이프 (우측으로 밀어 뒤로가기)
+// 🚀 스마트폰 스와이프 탭 전환 (수정됨)
 // =========================================================
 let touchStartX = 0;
 let touchStartY = 0;
@@ -209,30 +204,42 @@ window.addEventListener('touchend', function(e) {
     handleSwipe();
 }, { passive: true });
 
+// 실제 탭 전환 순서: 홈 -> 지도 -> 탐색 -> 프로필
+const swipeTabs = ['home', 'map', 'explore', 'profile'];
+
 function handleSwipe() {
     const diffX = touchEndX - touchStartX;
     const diffY = Math.abs(touchEndY - touchStartY);
 
-    // 사용자가 우측으로 90px 이상 밀었고, 위아래 흔들림이 60px 이하일 때만 동작 (뒤로 가기)
-    if (diffX > 90 && diffY < 60) {
-        
-        // 1순위: 열려있는 팝업 모달창이 있다면 우선적으로 닫기
-        let modalClosed = false;
-        const openModals = Array.from(document.querySelectorAll('.bottom-modal')).filter(m => window.getComputedStyle(m).display === 'flex' || window.getComputedStyle(m).display === 'block');
-        
-        if (openModals.length > 0) {
-            // 가장 위에 있는 (마지막) 모달을 닫습니다
+    // 사용자가 위아래로 스크롤하는 동작일 때는 스와이프를 무시합니다.
+    if (diffY > 60) return;
+
+    // 1순위: 열려있는 팝업 모달창이 있다면 우선적으로 닫기
+    const openModals = Array.from(document.querySelectorAll('.bottom-modal')).filter(m => window.getComputedStyle(m).display === 'flex' || window.getComputedStyle(m).display === 'block');
+    if (openModals.length > 0) {
+        if (diffX > 90) { // 화면을 우측으로 밀면 모달창 닫힘
             const topModal = openModals[openModals.length - 1];
             topModal.style.display = 'none';
-            modalClosed = true;
-            return;
         }
+        return; // 모달이 켜져있을 땐 뒤로 다른 화면으로 넘어가지 않음
+    }
 
-        // 2순위: 모달이 없다면 이전 탭(화면)으로 되돌아가기
-        if (!modalClosed && tabHistory.length > 1) {
-            tabHistory.pop(); // 현재 화면 기록 삭제
-            const prevTab = tabHistory[tabHistory.length - 1]; // 바로 이전 화면
-            switchTab(prevTab, false, true); // 이전 화면으로 이동
-        }
+    // 2순위: 현재 보고있는 탭이 무엇인지 확인
+    const activeNav = document.querySelector('.nav-item.active');
+    if (!activeNav) return;
+    const currentTab = activeNav.id.replace('m-', '');
+    const currentIndex = swipeTabs.indexOf(currentTab);
+
+    if (currentIndex === -1) return; // 중앙의 '+' 버튼일 경우 무시
+
+    // 3순위: 화면을 민 방향에 따라 다음 탭이나 이전 탭으로 이동
+    if (diffX < -90) {
+        // 화면을 왼쪽으로 스와이프 -> 다음 페이지로 전환
+        const nextIndex = (currentIndex + 1) % swipeTabs.length;
+        switchTab(swipeTabs[nextIndex]);
+    } else if (diffX > 90) {
+        // 화면을 오른쪽으로 스와이프 -> 이전 페이지로 전환
+        const prevIndex = (currentIndex - 1 + swipeTabs.length) % swipeTabs.length;
+        switchTab(swipeTabs[prevIndex]);
     }
 }

@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
     <meta name="referrer" content="no-referrer">
-    
     <meta name="color-scheme" content="light only">
     <meta name="theme-color" content="#F7F7F9">
     
@@ -47,9 +45,8 @@
         
         <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.75); z-index: 1;"></div>
 
-        <div style="width: 80px; height: 80px; background: var(--brand-primary); border-radius: 24px; display: flex; justify-content: center; align-items: center; color: white; font-size: 42px; font-weight: 900; font-style: italic; margin-bottom: 40px; box-shadow: var(--shadow-soft); position: relative; z-index: 2;">
-            p.
-        </div>
+        <img src="images/logo.png" alt="Perchel Logo" onerror="this.src='/images/logo.png'" style="width: 100px; height: 100px; border-radius: 28px; margin-bottom: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); position: relative; z-index: 2; object-fit: cover;">
+        
         <h1 data-ko="퍼슐 입장" data-en="Enter Perchel" style="color: var(--text-main); font-size: 28px; font-weight: 800; margin-bottom: 40px; letter-spacing: -0.5px; position: relative; z-index: 2;">
             퍼슐 입장
         </h1>
@@ -72,17 +69,7 @@
                     </svg>
                     <span data-ko="카카오 로그인 (점검 중)" data-en="Kakao Login (Maintenance)">카카오 로그인 (점검 중)</span>
                 </button>
-
             </div>
-
-            <div style="display:flex; align-items:center; margin: 10px 0; color:var(--text-sub); font-size:12px;">
-                <div style="flex:1; height:1px; background:var(--border-color);"></div>
-                <span style="padding: 0 10px;">또는</span>
-                <div style="flex:1; height:1px; background:var(--border-color);"></div>
-            </div>
-            <input type="text" id="login-user" class="input-field" placeholder="아이디">
-            <input type="password" id="login-pass" class="input-field" placeholder="비밀번호">
-            <button class="btn-primary" onclick="handleLogin()">이메일로 시작하기</button>
         </div>
     </div>
 
@@ -90,28 +77,28 @@
         <header class="top-bar transparent" id="main-top-bar">
             <div class="top-bar-content">
                 <div class="top-logo" onclick="switchTab('home')">perchel</div>
-                <div style="display:flex; align-items:center; gap: 14px;">
-                    <select id="global-region-select" onchange="changeGlobalRegion()">
+                <div style="display:flex; align-items:center; gap: 10px;">
+                    <select id="global-region-select" onchange="changeGlobalRegion()" style="flex-shrink: 0;">
                         <option value="national" data-ko="전국" data-en="National">전국</option>
                         <option value="서울">서울</option><option value="부산">부산</option><option value="대구">대구</option><option value="인천">인천</option><option value="광주">광주</option><option value="대전">대전</option><option value="울산">울산</option><option value="세종">세종</option><option value="경기">경기</option><option value="강원">강원</option><option value="충북">충북</option><option value="충남">충남</option><option value="전북">전북</option><option value="전남">전남</option><option value="경북">경북</option><option value="경남">경남</option><option value="제주">제주</option>
                     </select>
 
-                    <div class="mentor-btn" onclick="switchTab('network')" title="나의 미식멘토">
+                    <div class="mentor-btn" onclick="switchTab('network')" title="나의 미식멘토" style="flex-shrink: 0;">
                         👑 <span data-ko="M" data-en="M">M</span>
                     </div>
 
-                    <div onclick="openGlobalSearchModal()" style="cursor:pointer; display:flex; align-items:center; justify-content:center;" title="메뉴/식당 검색"><svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
-                    <div style="position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="openNotificationModal()" title="내 소식"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg><div id="noti-badge" class="noti-badge"></div></div>
-                    <div id="lang-toggle" class="lang-toggle" onclick="toggleLanguage()">EN</div>
-                    <div onclick="handleLogout()" style="cursor:pointer; display:flex; align-items:center; justify-content:center;" title="로그아웃"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
+                    <div onclick="openGlobalSearchModal()" style="cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="메뉴/식당 검색"><svg class="svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+                    <div style="position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;" onclick="openNotificationModal()" title="내 소식"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg><div id="noti-badge" class="noti-badge"></div></div>
+                    <div id="lang-toggle" class="lang-toggle" onclick="toggleLanguage()" style="flex-shrink:0;">EN</div>
+                    <div onclick="handleLogout()" style="cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;" title="로그아웃"><svg class="svg-icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
                 </div>
             </div>
         </header>
 
         <div id="home-view" class="tab-view" style="display:block;">
             <div class="home-top-banner">
-                <div class="home-top-banner-title" data-ko="오늘의 미식<br>큐레이션" data-en="Today's<br>Curation">오늘의 미식<br>큐레이션</div>
-                <div class="home-top-banner-sub" data-ko="가장 트렌디한 다이닝 경험을 확인하세요" data-en="Discover trendy dining experiences">가장 트렌디한 다이닝 경험을 확인하세요</div>
+                <div class="home-top-banner-title" data-ko="찐 미식가<br>취향 페어링" data-en="Today's<br>Curation">찐 미식가<br>취향 페어링</div>
+                <div class="home-top-banner-sub" data-ko="모르는 리뷰보다, 나만의 미식 멘토 찾기" data-en="Discover trendy dining experiences">모르는 리뷰보다, 나만의 미식 멘토 찾기</div>
             </div>
             <div class="home-section-container">
                 <div class="section-title" id="home-editor-title" data-ko="인기 미식가" data-en="Featured Gourmets">인기 미식가</div>
@@ -170,7 +157,13 @@
         </div>
 
         <nav class="bottom-nav">
-            <div class="nav-item active" id="m-home" onclick="switchTab('home')"><svg class="nav-icon svg-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg><span data-ko="홈" data-en="Home">홈</span></div>
+            <div class="nav-item active" id="m-home" onclick="switchTab('home')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 10l9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V10z"></path>
+                    <polyline points="9 21 9 12 15 12 15 21"></polyline>
+                </svg>
+                <span data-ko="홈" data-en="Home">홈</span>
+            </div>
             <div class="nav-item" id="m-map" onclick="switchTab('map')"><svg class="nav-icon svg-icon" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" y1="2" x2="8" y2="18"></line><line x1="16" y1="6" x2="16" y2="22"></line></svg><span data-ko="내주변" data-en="Map">내주변</span></div>
             <div class="nav-fab-wrapper"><div class="nav-fab" onclick="openSearchModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></div></div>
             <div class="nav-item" id="m-explore" onclick="switchTab('explore')"><svg class="nav-icon svg-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg><span data-ko="탐색" data-en="Explore">탐색</span></div>
@@ -190,6 +183,7 @@
             </div>
         </div>
     </div>
+    
     <div id="global-search-modal" class="bottom-modal" style="z-index: 2100;">
         <div class="modal-body" style="height: 90vh;">
             <div style="padding:24px 24px 16px; display:flex; justify-content:space-between; align-items:center;">
