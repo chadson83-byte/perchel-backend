@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Perchel</string>
+    <string name="title_activity_main">Perchel</string>
+    <string name="package_name">com.chadson83.perchel</string>
+    <string name="custom_url_scheme">com.chadson83.perchel</string>
+</resources>
