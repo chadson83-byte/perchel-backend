@@ -4,4 +4,5 @@
     <string name="title_activity_main">Perchel</string>
     <string name="package_name">com.chadson83.perchel</string>
     <string name="custom_url_scheme">com.chadson83.perchel</string>
+    <string name="server_client_id">725138598590-gjhd8dduh3ag3922il5pcrf15q1rjvvn.apps.googleusercontent.com</string>
 </resources>

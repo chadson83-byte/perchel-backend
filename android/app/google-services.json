@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "725138598590",
+    "project_id": "perchel-488611",
+    "storage_bucket": "perchel-488611.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:725138598590:android:fa0278b200f8a411860cef",
+        "android_client_info": {
+          "package_name": "com.chadson83.perchel"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "725138598590-gjhd8dduh3ag3922il5pcrf15q1rjvvn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC74vN6A1r9KbU1k4WNt0Oprn-SK0TMTOY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "725138598590-gjhd8dduh3ag3922il5pcrf15q1rjvvn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
