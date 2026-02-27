@@ -1,0 +1,24 @@
+{
+  "name": "Perchel - Premium Gastronomy Journal",
+  "short_name": "Perchel",
+  "description": "나만의 프리미엄 미식 서열표와 맛집 큐레이션",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F7F7F9",
+  "theme_color": "#FF5A20",
+  "icons": [
+    {
+      "src": "/images/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

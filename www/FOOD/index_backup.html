@@ -1,0 +1,3203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Perchel - Premium Gastronomy Journal</title>
+    
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=1bf29ed9131417186b665259385414f8&libraries=services&autoload=false"></script>
+    
+    <style>
+        /* =========================================================
+           [1] 글로벌 테마: 시안과 동일한 클린 화이트 & 오렌지 포인트
+           ========================================================= */
+        :root {
+            --bg-main: #F7F7F9;            
+            --bg-card: #FFFFFF;            
+            
+            --brand-primary: #1C1E21;      
+            --brand-fab: #FF5A20;          
+            --brand-yellow: #FFC107;       
+            
+            --text-main: #111111;          
+            --text-sub: #7A7C80;           
+            --border-color: #EAEAEA;       
+            
+            --tag-pink-bg: rgba(255, 90, 32, 0.15); 
+            --tag-pink-txt: #FF7E5F; 
+            --tag-green-bg: rgba(74, 99, 78, 0.15); 
+            --tag-green-txt: #4A634E;
+            --tag-orange-bg: rgba(221, 167, 123, 0.15); 
+            --tag-orange-txt: #A67046; 
+            --tag-blue-bg: rgba(28, 30, 33, 0.1); 
+            --tag-blue-txt: #1C1E21;
+            
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.05); 
+            --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --shadow-fab: 0 8px 24px rgba(255, 90, 32, 0.35);
+            
+            --radius-xl: 24px; 
+            --radius-lg: 16px; 
+            --radius-md: 12px;
+        }
+
+        * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+            -webkit-tap-highlight-color: transparent; 
+            outline: none; 
+        }
+
+        body { 
+            font-family: 'Pretendard', sans-serif; 
+            background-color: var(--bg-main); 
+            color: var(--text-main); 
+            line-height: 1.6; 
+            overflow-x: hidden; 
+            -webkit-font-smoothing: antialiased; 
+        }
+
+        .s-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--brand-yellow);
+            color: #000;
+            font-size: 10px;
+            font-weight: 900;
+            padding: 4px 8px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(255, 193, 7, 0.3);
+            border: 2px solid #FFF;
+            z-index: 10;
+            letter-spacing: -0.5px;
+        }
+
+        /* =========================================================
+           [2] 스플래시 인트로
+           ========================================================= */
+        #splash-screen { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: #FFFFFF; 
+            z-index: 9999; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+        }
+
+        .splash-content { 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
+
+        .splash-logo-wrapper {
+            overflow: hidden; 
+            padding-bottom: 5px;
+        }
+
+        .splash-logo { 
+            font-size: 52px; 
+            font-weight: 900; 
+            color: var(--brand-primary); 
+            font-style: italic; 
+            letter-spacing: -2px; 
+            transform: translateY(100%); 
+            opacity: 0;
+            filter: blur(8px); 
+            animation: slideUpReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+        }
+
+        .splash-logo .dot {
+            color: var(--brand-fab); 
+        }
+
+        .splash-line {
+            width: 0px;
+            height: 3px;
+            background: var(--brand-fab);
+            margin: 10px 0;
+            border-radius: 2px;
+            animation: expandLine 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+        }
+
+        .splash-sub { 
+            font-size: 11px; 
+            color: var(--text-sub); 
+            text-transform: uppercase; 
+            font-weight: 700;
+            letter-spacing: 0px; 
+            opacity: 0; 
+            transform: translateY(10px);
+            animation: fadeExpand 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; 
+        }
+
+        @keyframes slideUpReveal { 
+            to { transform: translateY(0); opacity: 1; filter: blur(0); } 
+        }
+        @keyframes expandLine {
+            to { width: 30px; } 
+        }
+        @keyframes fadeExpand { 
+            to { opacity: 1; letter-spacing: 4px; transform: translateY(0); } 
+        }
+
+        /* =========================================================
+           [3] 상단 네비게이션 (🚨 로고 크기 및 비율 시안 완벽 반영)
+           ========================================================= */
+        .top-bar { 
+            width: 100%; 
+            background: rgba(247, 247, 249, 0.9); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px);
+            display: flex; 
+            justify-content: center; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            z-index: 1000; 
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .top-bar.transparent {
+            background: transparent;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-bottom: none;
+        }
+        
+        .top-bar-content { 
+            width: 100%; 
+            max-width: 600px; 
+            height: 70px; /* 상단바 여유 공간 확보 */
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 0 24px; 
+        }
+
+        .top-logo { 
+            font-size: 32px; /* 🚨 시안에 맞춰 로고 폰트 대폭 확대 (24px -> 32px) */
+            font-weight: 900; 
+            color: var(--brand-primary); 
+            cursor: pointer; 
+            letter-spacing: -1.5px; 
+            font-style: italic; 
+            transition: color 0.3s ease;
+        }
+
+        .top-bar.transparent .top-logo { color: #FFFFFF; text-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+        .top-bar.transparent .svg-icon { stroke: #FFFFFF; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
+        .top-bar.transparent #global-region-select { color: #FFFFFF; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .top-bar.transparent .lang-toggle { color: #FFFFFF; border-color: rgba(255,255,255,0.6); }
+        .top-bar.transparent .mentor-btn { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color:#FFF;}
+
+        #global-region-select {
+            background: transparent; 
+            border: none; 
+            font-family: 'Pretendard', sans-serif; 
+            font-weight: 700; 
+            font-size: 14px; 
+            color: var(--brand-primary); 
+            outline: none; 
+            cursor: pointer;
+            padding-right: 5px;
+            transition: color 0.3s ease;
+        }
+
+        #global-region-select option {
+            background-color: #FFFFFF;
+            color: #111111;
+            text-shadow: none;
+        }
+
+        .mentor-btn { 
+            background: var(--brand-primary); 
+            color: #FFFFFF; 
+            padding: 8px 14px; 
+            border-radius: 20px; 
+            font-size: 11px; 
+            font-weight: 700; 
+            display: flex; 
+            align-items: center; 
+            gap: 4px; 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+        }
+
+        .lang-toggle { 
+            background: transparent; 
+            padding: 4px 8px; 
+            border-radius: 8px; 
+            font-size: 11px; 
+            font-weight: 600; 
+            color: var(--text-sub); 
+            border: 1px solid var(--border-color); 
+            cursor: pointer; 
+            transition: all 0.3s ease;
+        }
+
+        /* =========================================================
+           [4] 하단 네비게이션 & 오렌지 FAB
+           ========================================================= */
+        .bottom-nav { 
+            display: flex; 
+            position: fixed; 
+            bottom: 0; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 100%; 
+            max-width: 600px; 
+            height: 70px; 
+            background: rgba(255,255,255,0.95); 
+            backdrop-filter: blur(10px);
+            border-top: 1px solid var(--border-color); 
+            z-index: 1000; 
+            padding: 0 10px env(safe-area-inset-bottom); 
+        }
+
+        .nav-item { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            color: var(--text-sub); 
+            cursor: pointer; 
+            font-size: 10px; 
+            font-weight: 600; 
+        }
+
+        .nav-item.active { color: var(--brand-fab); }
+        .nav-icon { width: 22px; height: 22px; margin-bottom: 4px; opacity: 0.8; transition: all 0.2s; }
+        .nav-item.active .nav-icon { opacity: 1; stroke-width: 2.5; stroke: var(--brand-fab); }
+
+        .nav-fab-wrapper { position: relative; width: 60px; display: flex; justify-content: center; }
+        .nav-fab { 
+            position: absolute; 
+            top: -25px; 
+            width: 56px; 
+            height: 56px; 
+            background: var(--brand-fab); 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            box-shadow: var(--shadow-fab); 
+            border: 4px solid var(--bg-main); 
+            cursor: pointer; 
+            z-index: 1001; 
+        }
+        .nav-fab svg { width: 24px; height: 24px; stroke: white; stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+        /* =========================================================
+           [5] 메인 레이아웃 및 범용 카드 (🔥 시안 완벽 동기화)
+           ========================================================= */
+        #main-content { 
+            display: none; 
+            width: 100%; 
+            max-width: 600px; 
+            margin: 0 auto 100px; 
+            padding: 0; /* 🚨 배너를 화면 맨 위까지 꽉 채우기 위해 기본 패딩 제거 */
+        }
+        
+        .tab-view {
+            padding-top: 70px; /* 기본 탭들은 상단바 높이만큼 패딩 유지 */
+            padding-left: 24px;
+            padding-right: 24px;
+        }
+
+        #home-view {
+            padding: 0 !important; /* 🚨 홈 화면은 배너가 위로 붙도록 패딩 완전 제거 */
+        }
+
+        .home-section-container {
+            padding: 0 24px; /* 홈 화면 내 하위 콘텐츠들의 좌우 여백 */
+        }
+
+        /* 🚨 메인 배너: 시안과 똑같은 산뜻한 샐러드/브런치 사진 및 거대한 타이포그래피 */
+        .home-top-banner {
+            width: 100%;
+            height: 480px; /* 🚨 시안 비율에 맞춰 높이를 화면의 절반 가까이 대폭 확장 */
+            border-radius: 0 0 32px 32px; 
+            /* 어둡고 무거운 고기 사진 제거 -> 시안과 동일한 톤의 산뜻한 브런치 이미지 적용 */
+            background-image: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%), url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'); 
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 40px 24px 60px; /* 텍스트가 시안처럼 하단에 위치하도록 패딩 조정 */
+            color: white;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .home-top-banner-title {
+            font-size: 36px; /* 🚨 시안처럼 텍스트를 거대하고 압도적으로 키움 */
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            letter-spacing: -1px;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .home-top-banner-sub {
+            font-size: 15px;
+            font-weight: 500;
+            opacity: 0.9;
+            letter-spacing: -0.5px;
+        }
+
+        .section-title { 
+            font-size: 18px; 
+            font-weight: 800; 
+            color: var(--text-main); 
+            margin: 40px 0 20px; 
+            display: flex;
+            align-items: center;
+        }
+
+        .editor-row { 
+            display: flex; 
+            gap: 16px; 
+            overflow-x: auto; 
+            padding-bottom: 20px; /* 그림자가 잘리지 않도록 하단 여백 추가 */
+            scrollbar-width: none; 
+            scroll-snap-type: x mandatory; 
+        }
+
+        .editor-row::-webkit-scrollbar { 
+            display: none; 
+        }
+
+        /* 🚨 진짜 글래스모피즘(Glassmorphism) 카드: 시안의 은은한 옥색/흰색 그라데이션 완벽 구현 */
+        .editor-card { 
+            /* 은은한 에메랄드/블루 빛이 도는 반투명 그라데이션 배경 */
+            background: linear-gradient(160deg, rgba(255, 255, 255, 0.9) 0%, rgba(224, 242, 241, 0.5) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 24px 16px; 
+            border-radius: 20px; /* 시안처럼 둥글게 */
+            min-width: 130px; 
+            flex-shrink: 0; 
+            text-align: center; 
+            cursor: pointer; 
+            /* 입체감을 살리는 그림자와 하얀색 테두리 */
+            box-shadow: 0 10px 30px rgba(0, 40, 60, 0.08); 
+            border: 1px solid rgba(255, 255, 255, 0.8); 
+            scroll-snap-align: start; 
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .editor-card:active {
+            transform: scale(0.96);
+        }
+
+        .editor-img-container { 
+            width: 64px; 
+            height: 64px; 
+            margin: 0 auto 12px; 
+            position: relative; 
+            border-radius: 50%;
+            /* 시안에 있는 프로필 사진 겉면의 오렌지 그라데이션 링 */
+            background: linear-gradient(45deg, var(--brand-primary), #FF8C60);
+            padding: 3px;
+        }
+
+        .avatar-circle { 
+            width: 100%; 
+            height: 100%; 
+            border-radius: 50%; 
+            overflow: hidden; 
+            background: #FFFFFF; 
+            border: 2px solid #FFFFFF; /* 이미지와 링 사이의 흰색 여백 */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* 🚨 오렌지색 팔로우 텍스트 버튼 (시안과 100% 동일) */
+        .editor-follow-btn {
+            background: var(--brand-fab) !important;
+            color: #FFFFFF !important;
+            border: none !important;
+            font-weight: 800;
+            padding: 10px 0 !important; /* 버튼 높이 키움 */
+            font-size: 12px !important;
+            border-radius: 20px !important;
+            margin-top: 14px !important;
+            cursor: pointer;
+            width: 100%;
+            box-shadow: 0 4px 12px rgba(255, 90, 32, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .editor-follow-btn:active {
+            transform: scale(0.95);
+        }
+
+        .card-grid { 
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            gap: 16px; 
+        }
+
+        .rest-card { 
+            background: var(--bg-card); 
+            border-radius: var(--radius-lg); 
+            overflow: hidden; 
+            padding: 12px; 
+            box-shadow: var(--shadow-soft); 
+            border: 1px solid var(--border-color);
+            cursor: pointer; 
+            display: flex; 
+            flex-direction: column; 
+            transition: transform 0.2s;
+        }
+
+        .rest-card:active {
+            transform: scale(0.98);
+        }
+
+        .rest-img-wrapper { 
+            position: relative; 
+            border-radius: var(--radius-md); 
+            overflow: hidden; 
+            aspect-ratio: 4/3; 
+            margin-bottom: 12px; 
+            background: #eee; 
+        }
+
+        .rest-img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+
+        .rest-name { 
+            font-weight: 800; 
+            font-size: 15px; 
+            margin-bottom: 4px; 
+            color: var(--text-main); 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+
+        /* =========================================================
+           [6] 하이엔드 프로필 다크 카드 (원상 복구 완료)
+           ========================================================= */
+        .profile-dash { 
+            background: linear-gradient(135deg, #0B1C1D, #162C2D); 
+            border-radius: var(--radius-xl); 
+            padding: 40px 24px; 
+            color: white; 
+            margin-bottom: 30px; 
+            text-align: center; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15); 
+            position: relative; 
+            overflow: hidden;
+        }
+
+        .dash-pic-container { 
+            width: 90px; 
+            height: 90px; 
+            border-radius: 50%; 
+            margin: 0 auto 16px; 
+            border: 3px solid rgba(255,255,255,0.2); 
+            padding: 3px; 
+            position: relative; 
+            cursor: pointer;
+        }
+
+        .profile-philosophy { 
+            font-size: 14px; 
+            font-style: italic; 
+            color: rgba(255,255,255,0.7); 
+            margin: 12px 0 20px; 
+            line-height: 1.5; 
+            font-weight: 500; 
+        }
+
+        .profile-dna-tags {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .dna-tag { 
+            background: rgba(255,255,255,0.1); 
+            color: #FFF; 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            font-size: 11px; 
+            font-weight: 600; 
+            display: inline-block; 
+        }
+
+        .dash-stats { 
+            display: flex; 
+            justify-content: space-around; 
+            background: rgba(0,0,0,0.3); 
+            padding: 20px; 
+            border-radius: var(--radius-lg); 
+            margin-top: 20px;
+        }
+
+        /* =========================================================
+           [7] 서열표 랭킹 UI (원상 복구 완료)
+           ========================================================= */
+        .tier-header-title { 
+            font-size: 18px; 
+            font-weight: 900; 
+            color: var(--text-main); 
+            margin: 40px 0 15px; 
+            text-transform: uppercase; 
+            letter-spacing: -0.5px; 
+            border-bottom: 2px solid var(--border-color); 
+            padding-bottom: 8px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-end; 
+        }
+
+        .guide-grid { 
+            display: grid; 
+            grid-template-columns: repeat(3, 1fr); /* 3열 그리드로 복구 */
+            gap: 12px; 
+        }
+
+        .guide-card { 
+            position: relative; 
+            width: 100%; 
+            aspect-ratio: 1; 
+            border-radius: 16px; 
+            overflow: hidden; 
+            box-shadow: var(--shadow-soft); 
+            cursor: pointer; 
+            background: #eee; 
+        }
+
+        .guide-card-bg { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+            transition: transform 0.4s ease; 
+        }
+
+        .guide-card:hover .guide-card-bg { 
+            transform: scale(1.05); 
+        }
+
+        .guide-card-overlay { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%); 
+            padding: 30px 12px 12px; 
+            text-align: left; 
+            color: white; 
+            pointer-events: none; 
+        }
+
+        .guide-tier-text { 
+            font-size: 10px; 
+            font-weight: 900; 
+            margin-bottom: 2px; 
+            color: var(--brand-yellow); 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .guide-name-text { 
+            font-size: 13px; 
+            font-weight: 800; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+        }
+
+        /* =========================================================
+           [8] 팝업 모달창 및 기타 UI (원상 복구 완료)
+           ========================================================= */
+        .bottom-modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.6); 
+            z-index: 2000; 
+            align-items: flex-end; 
+            justify-content: center; 
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-body { 
+            background: var(--bg-card); 
+            width: 100%; 
+            max-width: 600px; 
+            border-radius: 24px 24px 0 0; 
+            display: flex; 
+            flex-direction: column; 
+            height: 88vh; 
+            padding: 24px; 
+            animation: slideUp 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+
+        @keyframes slideUp { 
+            from { transform: translateY(100%); } 
+            to { transform: translateY(0); } 
+        }
+
+        .input-field { 
+            width: 100%; 
+            padding: 16px; 
+            margin-bottom: 16px; 
+            border-radius: 12px; 
+            border: 1px solid var(--border-color); 
+            background: var(--bg-main); 
+            font-size: 14px; 
+            outline: none; 
+            transition: all 0.2s;
+        }
+
+        .input-field:focus { 
+            border-color: var(--brand-primary); 
+            box-shadow: 0 0 0 3px rgba(255, 90, 32, 0.1);
+        }
+
+        .btn-primary { 
+            width: 100%; 
+            padding: 16px; 
+            border-radius: 12px; 
+            border: none; 
+            background: var(--brand-primary); 
+            color: white; 
+            font-weight: 700; 
+            font-size: 15px; 
+            cursor: pointer; 
+            transition: transform 0.2s;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+        
+        .noti-badge { 
+            position: absolute; 
+            top: 0px; 
+            right: 0px; 
+            background: red; 
+            width: 8px; 
+            height: 8px; 
+            border-radius: 50%; 
+            display: none; 
+            border: 1px solid white;
+        }
+
+        .svg-icon { 
+            width: 24px; 
+            height: 24px; 
+            stroke: currentColor; 
+            stroke-width: 2; 
+            fill: none; 
+            stroke-linecap: round; 
+            stroke-linejoin: round; 
+        }
+        
+        ::-webkit-scrollbar { 
+            display: none; 
+        }
+
+        .multi-image-slider { 
+            width: 100%; 
+            display: flex; 
+            overflow-x: auto; 
+            scroll-snap-type: x mandatory; 
+            gap: 10px; 
+            padding-bottom: 10px; 
+            scrollbar-width: none; 
+            margin-bottom: 20px; 
+        }
+        
+        .multi-image-slide { 
+            flex: 0 0 100%; 
+            height: 300px; 
+            scroll-snap-align: center; 
+            border-radius: var(--radius-lg); 
+            object-fit: cover; 
+            background: #111; 
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); 
+        }
+    </style>
+</head>
+<body>
+
+    <div id="splash-screen">
+        <div class="splash-content">
+            <div class="splash-logo-wrapper">
+                <div class="splash-logo">perchel<span class="dot">.</span></div>
+            </div>
+            <div class="splash-line"></div>
+            <div class="splash-sub">Premium Gastronomy Journal</div>
+        </div>
+    </div>
+
+    <div id="login-section" style="display: none; height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 20px; position: relative; z-index: 99999;">
+        <div style="width: 80px; height: 80px; background: var(--brand-primary); border-radius: 24px; display: flex; justify-content: center; align-items: center; color: white; font-size: 42px; font-weight: 900; font-style: italic; margin-bottom: 40px; box-shadow: var(--shadow-soft);">
+            p.
+        </div>
+        <h1 data-ko="퍼슐 입장" data-en="Enter Perchel" style="color: var(--text-main); font-size: 28px; font-weight: 800; margin-bottom: 40px; letter-spacing: -0.5px;">
+            퍼슐 입장
+        </h1>
+        <div style="width: 100%; max-width: 320px;">
+            <input type="text" id="login-user" class="input-field" data-ph-ko="아이디" data-ph-en="Username" placeholder="아이디">
+            <input type="password" id="login-pass" class="input-field" data-ph-ko="비밀번호" data-ph-en="Password" placeholder="비밀번호">
+            <input type="text" id="login-info" class="input-field" data-ph-ko="간단한 자기소개" data-ph-en="Bio" placeholder="간단한 자기소개" style="display: none; margin-top: 8px;">
+            <button class="btn-primary" style="margin-top: 10px;" onclick="handleLogin()" data-ko="시작하기" data-en="Continue">
+                시작하기
+            </button>
+            <p onclick="handleSignup()" data-ko="계정 생성하기" data-en="Create account" style="margin-top: 30px; color: var(--text-sub); text-align: center; cursor: pointer; font-weight: 600; font-size: 13px;">
+                계정 생성하기
+            </p>
+        </div>
+    </div>
+
+    <div id="main-content">
+        <header class="top-bar transparent" id="main-top-bar">
+            <div class="top-bar-content">
+                <div class="top-logo" onclick="switchTab('home')">perchel</div>
+                <div style="display:flex; align-items:center; gap: 14px;">
+                    
+                    <select id="global-region-select" onchange="changeGlobalRegion()">
+                        <option value="national" data-ko="전국" data-en="National">전국</option>
+                        <option value="서울">서울</option>
+                        <option value="부산">부산</option>
+                        <option value="대구">대구</option>
+                        <option value="인천">인천</option>
+                        <option value="광주">광주</option>
+                        <option value="대전">대전</option>
+                        <option value="울산">울산</option>
+                        <option value="세종">세종</option>
+                        <option value="경기">경기</option>
+                        <option value="강원">강원</option>
+                        <option value="충북">충북</option>
+                        <option value="충남">충남</option>
+                        <option value="전북">전북</option>
+                        <option value="전남">전남</option>
+                        <option value="경북">경북</option>
+                        <option value="경남">경남</option>
+                        <option value="제주">제주</option>
+                    </select>
+
+                    <div class="mentor-btn" onclick="switchTab('network')" title="나의 미식멘토">
+                        👑 <span data-ko="미식멘토" data-en="Mentors">미식멘토</span>
+                    </div>
+
+                    <div onclick="openGlobalSearchModal()" style="cursor:pointer; display:flex; align-items:center; justify-content:center;" title="메뉴/식당 검색">
+                        <svg class="svg-icon" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+
+                    <div style="position:relative; cursor:pointer; display:flex; align-items:center; justify-content:center;" onclick="openNotificationModal()" title="내 소식">
+                        <svg class="svg-icon" viewBox="0 0 24 24">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <div id="noti-badge" class="noti-badge"></div>
+                    </div>
+
+                    <div id="lang-toggle" class="lang-toggle" onclick="toggleLanguage()">EN</div>
+
+                    <div onclick="handleLogout()" style="cursor:pointer; display:flex; align-items:center; justify-content:center;" title="로그아웃">
+                        <svg class="svg-icon" viewBox="0 0 24 24">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="home-view" class="tab-view" style="display:block;">
+            <div class="home-top-banner">
+                <div class="home-top-banner-title" data-ko="오늘의 미식<br>큐레이션" data-en="Today's<br>Curation">오늘의 미식<br>큐레이션</div>
+                <div class="home-top-banner-sub" data-ko="가장 트렌디한 다이닝 경험을 확인하세요" data-en="Discover trendy dining experiences">가장 트렌디한 다이닝 경험을 확인하세요</div>
+            </div>
+
+            <div class="home-section-container">
+                <div class="section-title" id="home-editor-title" data-ko="인기 미식가" data-en="Featured Gourmets">
+                    인기 미식가
+                </div>
+                <div class="editor-row" id="editor-list-container"></div>
+                
+                <div class="section-title" style="margin-top:40px;" data-ko="인기 맛집 포트폴리오" data-en="Popular Places">
+                    인기 맛집 포트폴리오
+                </div>
+                <div class="card-grid" id="popular-list-container"></div>
+                
+                <div class="section-title" style="margin-top:40px;" data-ko="최근 등록된 식당" data-en="Recently Added">
+                    최근 등록된 식당
+                </div>
+                <div class="card-grid" id="new-list-container"></div>
+            </div>
+        </div>
+
+        <div id="network-view" class="tab-view" style="display:none; padding-top:80px;">
+            <div style="padding: 10px 0;">
+                <h2 style="font-size: 26px; font-weight: 900; margin-bottom: 5px; color: var(--text-main);" data-ko="나의 미식멘토" data-en="My Mentors">
+                    나의 미식멘토
+                </h2>
+                <div style="font-size:13px; color:var(--text-sub); margin-bottom:30px;" data-ko="최고의 미식가들을 팔로우하고 서열표를 확인하세요." data-en="Follow top gourmets and check their tier lists.">
+                    최고의 미식가들을 팔로우하고 서열표를 확인하세요.
+                </div>
+                
+                <div class="section-title" data-ko="팔로잉" data-en="Following">팔로잉</div>
+                <div id="following-list-container"></div>
+                
+                <div class="section-title" style="margin-top:40px;" data-ko="추천 미식가" data-en="Recommended Gourmets">추천 미식가</div>
+                <div id="recommended-list-container"></div>
+            </div>
+        </div>
+
+        <div id="explore-view" class="tab-view" style="display:none; padding-top:80px;">
+            <div style="display:flex; gap:10px; margin-bottom:20px; justify-content:center;">
+                <button id="tab-explore-ranking" onclick="switchExploreTab('ranking')" class="btn-primary" style="flex:1; background:var(--brand-primary);">맛집 인기순</button>
+                <button id="tab-explore-feed" onclick="switchExploreTab('feed')" class="btn-primary" style="flex:1; background:#EAEAEA; color:#111;">실시간 피드</button>
+            </div>
+
+            <div id="explore-ranking-area">
+                <input type="text" id="ranking-search-input" class="input-field" placeholder="메뉴나 식당 이름을 검색하세요 🔍" onkeyup="if(event.keyCode==13) fetchRankingData()">
+                <div style="font-size:12px; color:var(--text-sub); margin-bottom:16px; text-align:center;">
+                    아무것도 입력하지 않고 돋보기를 누르면 '전체 랭킹'이 표시됩니다.
+                </div>
+                <button class="btn-primary" style="margin-bottom:24px; padding:16px;" onclick="fetchRankingData()">검색 및 랭킹 확인</button>
+                <div id="ranking-list-container"></div>
+            </div>
+
+            <div id="explore-feed-area" style="display:none;">
+                <div id="feed-scroll-area"></div>
+            </div>
+        </div>
+        
+        <div id="map-view" class="tab-view" style="display:none; height: 100vh; padding: 60px 0 0 0;">
+            <div id="global-map" style="width:100%; height:100%; background:#eee;"></div>
+            <div class="my-location-btn" style="position: absolute; bottom: 100px; right: 20px; width: 44px; height: 44px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; cursor: pointer; border: 1px solid var(--border-color);" onclick="moveToMyLocation()" title="내 위치로 이동">
+                <svg class="svg-icon" viewBox="0 0 24 24" style="stroke:var(--brand-fab);">
+                    <polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+                </svg>
+            </div>
+        </div>
+
+        <div id="profile-view" class="tab-view" style="display:none; padding-top:60px; padding-left:0; padding-right:0;">
+            <div id="profile-header-target"></div>
+            
+            <div style="padding: 0 24px;">
+                <div id="registration-trigger" style="background:var(--bg-card); border: 1px dashed var(--border-color); border-radius:var(--radius-xl); padding:24px; margin-bottom:24px; text-align:center; cursor: pointer; transition: 0.3s; box-shadow:var(--shadow-soft);" onclick="openSearchModal()">
+                    <div style="font-size: 28px; color: var(--brand-fab); margin-bottom: 8px;">+</div>
+                    <div data-ko="새로운 미식 경험 기록하기" data-en="Log new experience" style="font-size: 14px; font-weight: 800; color: var(--brand-primary);">
+                        새로운 미식 경험 기록하기
+                    </div>
+                </div>
+                
+                <div id="guide-controls-target" class="guide-controls" style="display:none; margin-bottom:20px;">
+                    <input type="text" id="guide-search-input" class="input-field" data-ph-ko="서열표 내 식당 검색..." data-ph-en="Search in guide..." placeholder="서열표 내 식당 검색..." onkeyup="renderGuideSheet()">
+                </div>
+                
+                <div id="michelin-tables-target"></div>
+            </div>
+        </div>
+
+        <nav class="bottom-nav">
+            <div class="nav-item active" id="m-home" onclick="switchTab('home')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span data-ko="홈" data-en="Home">홈</span>
+            </div>
+            <div class="nav-item" id="m-map" onclick="switchTab('map')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24">
+                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                    <line x1="8" y1="2" x2="8" y2="18"></line>
+                    <line x1="16" y1="6" x2="16" y2="22"></line>
+                </svg>
+                <span data-ko="내주변" data-en="Map">내주변</span>
+            </div>
+            
+            <div class="nav-fab-wrapper">
+                <div class="nav-fab" onclick="openSearchModal()">
+                    <svg viewBox="0 0 24 24">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="nav-item" id="m-explore" onclick="switchTab('explore')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+                <span data-ko="탐색" data-en="Explore">탐색</span>
+            </div>
+            <div class="nav-item" id="m-profile" onclick="switchTab('profile')">
+                <svg class="nav-icon svg-icon" viewBox="0 0 24 24">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span data-ko="내 프로필" data-en="Profile">내 프로필</span>
+            </div>
+        </nav>
+    </div>
+
+    <div id="search-modal" class="bottom-modal">
+        <div class="modal-body" style="height: 85vh;">
+            <div style="padding:24px 24px 16px; display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-weight:800; font-size:20px; color:var(--brand-primary);" data-ko="장소 찾기" data-en="Search Place">장소 찾기</h2>
+                <div onclick="closeSearchModal()" style="cursor:pointer; color:var(--text-sub);">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+            </div>
+            <div style="padding:0 24px 24px; flex:1; overflow-y:auto; display:flex; flex-direction:column; position: relative;">
+                <input type="text" id="search-keyword" class="input-field" data-ph-ko="식당 이름 입력 후 Enter" data-ph-en="Search name and Enter" placeholder="식당 이름 입력 후 Enter" onkeypress="if(event.keyCode==13) executeKakaoSearch()">
+                <div id="search-results-target" style="flex:1; margin-top:10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="global-search-modal" class="bottom-modal" style="z-index: 2100;">
+        <div class="modal-body" style="height: 90vh;">
+            <div style="padding:24px 24px 16px; display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-weight:800; font-size:20px; color:var(--brand-primary);">🔍 메뉴 & 랭킹 검색</h2>
+                <div onclick="closeGlobalSearchModal()" style="cursor:pointer; color:var(--text-sub);">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+            </div>
+            <div style="padding:0 24px 24px; flex:1; overflow-y:auto; display:flex; flex-direction:column;">
+                <input type="text" id="global-ranking-input" class="input-field" style="border:1px solid var(--brand-primary);" placeholder="예: 파스타, 돼지갈비, 오마카세..." onkeyup="if(event.keyCode==13) executeGlobalSearch()">
+                <button class="btn-primary" style="margin-bottom:20px; padding:16px;" onclick="executeGlobalSearch()">검색하기</button>
+                <div id="global-search-results" style="flex:1;">
+                    <div style="text-align:center; padding:40px 20px; color:var(--text-sub); font-size:13px;">
+                        원하시는 메뉴나 식당 이름을 검색하시면<br>가장 많이 등록된 순서대로 랭킹을 보여드립니다.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-modal" class="bottom-modal" style="z-index: 2200;">
+        <div class="modal-body" style="height: 75vh;">
+            <div style="padding:24px 24px 16px; display:flex; justify-content:space-between; align-items:center;">
+                <h2 style="font-weight:800; font-size:20px; color:var(--brand-primary);">🔔 내 소식</h2>
+                <div onclick="closeNotificationModal()" style="cursor:pointer; color:var(--text-sub);">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+            </div>
+            <div style="padding:0; flex:1; overflow-y:auto;" id="notification-list-target">
+                <div style="text-align:center; padding:40px 20px; color:var(--text-sub); font-size:13px;">알림을 불러오는 중입니다...</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="post-detail-modal" class="bottom-modal" style="z-index: 2300;">
+        <div class="modal-body" style="height: 90vh; padding: 30px 24px; overflow-y: auto;">
+            <div style="font-weight: 800; font-size: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; color: var(--brand-primary);">
+                <span data-ko="새로운 등기" data-en="New Entry">새로운 등기</span>
+                <div onclick="cancelPosting()" style="cursor:pointer; color:var(--text-sub);">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+            </div>
+            
+            <div class="preview-container">
+                <div id="selected-rest-photo" style="width:100%; height:200px; background-size:cover; background-position:center; border-radius:16px; margin-bottom:12px; position:relative; overflow:hidden; border: 1px solid var(--border-color);"></div>
+                <div id="map-preview-area" style="width:100%; height:150px; border-radius:16px; margin-bottom:12px; border: 1px solid var(--border-color);"></div>
+            </div>
+            
+            <div id="selected-info-text" style="background:var(--bg-main); padding:18px; border-radius:12px; margin-bottom:20px; border: 1px solid var(--border-color);"></div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                <div style="font-size: 12px; font-weight: 700; color: var(--text-sub); text-transform:uppercase;" data-ko="미식평" data-en="Description">미식평</div>
+                <button onclick="recommendAIComment()" style="background:rgba(255,90,32,0.1); border:1px solid var(--brand-fab); color:var(--brand-fab); border-radius:12px; padding:6px 12px; font-size:10px; font-weight:800; cursor:pointer; transition:0.2s;">
+                    ✨ AI 큐레이션
+                </button>
+            </div>
+            
+            <input type="text" id="post-comment" class="input-field" data-ph-ko="이 곳에서의 경험을 한 줄로 적어주세요." data-ph-en="Write your experience..." placeholder="이 곳에서의 경험을 한 줄로 적어주세요.">
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; padding-bottom: 40px;">
+                <div style="flex:1;">
+                    <div style="font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px;" data-ko="사진 업로드 (다중 선택 가능)" data-en="Upload Photos (Multiple)">사진 업로드 (다중 선택 가능)</div>
+                    <input type="file" id="post-image" accept="image/*" multiple style="font-size:12px; color:var(--text-sub);" onchange="handleImagePreview(this)">
+                </div>
+                <button onclick="executeAddRestaurant()" class="btn-primary" style="width: auto; padding: 14px 28px;" data-ko="저장" data-en="Save">저장</button>
+            </div>
+            
+            <input type="hidden" id="h-name">
+            <input type="hidden" id="h-cat">
+            <input type="hidden" id="h-addr">
+            <input type="hidden" id="h-id">
+            <input type="hidden" id="h-x">
+            <input type="hidden" id="h-y">
+            <input type="hidden" id="h-phone">
+        </div>
+    </div>
+
+    <div id="restaurant-detail-modal" class="bottom-modal" style="z-index: 2400;">
+        <div class="modal-body" style="height: 90vh; padding: 0; overflow-y:auto;">
+            <div id="detail-view-card" style="padding: 30px 24px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+                    <span class="tag-pill" id="detail-tier" style="font-size:13px; padding:6px 14px; background:var(--brand-yellow); color:#000;"></span>
+                    <div style="display:flex; gap: 15px; align-items:center;">
+                        
+                        <div id="delete-rest-btn" onclick="executeDeleteRestaurant()" style="display:none; cursor:pointer; color:#FF4757;" title="기록 삭제">
+                            <svg class="svg-icon" viewBox="0 0 24 24" style="stroke:#FF4757; width:24px; height:24px;">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </div>
+                        
+                        <div onclick="closeRestDetail()" style="cursor:pointer; color:var(--text-sub);">
+                            <svg class="svg-icon" viewBox="0 0 24 24" style="width:28px; height:28px; stroke:var(--brand-primary);"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="detail-img" class="detail-main-img" style="background-position:center; background-size:cover; background-color:#eee; position:relative; overflow:hidden; border: 1px solid var(--border-color); border-radius: 16px; aspect-ratio: 4/3;">
+                    <button id="ai-sync-btn" style="position:absolute; bottom:12px; right:12px; background:rgba(0,0,0,0.8); color:var(--brand-fab); border:1px solid var(--brand-fab); padding:8px 14px; border-radius:20px; font-size:11px; font-weight:800; cursor:pointer; backdrop-filter:blur(4px); display:none; transition:0.2s; box-shadow: 0 4px 10px rgba(0,0,0,0.5); z-index:20;">
+                        ✨ AI 사진 변경
+                    </button>
+                </div>
+
+                <h2 id="detail-name" style="font-size:28px; font-weight:900; margin-bottom:12px; margin-top: 20px; color:var(--brand-primary); letter-spacing:-0.5px;"></h2>
+                
+                <div style="display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap;">
+                    <span class="tag-pill tag-orange" id="detail-category" style="padding: 4px 10px; border-radius: 12px; font-size: 11px;"></span>
+                    <span class="tag-pill tag-green" id="detail-address" style="padding: 4px 10px; border-radius: 12px; font-size: 11px;"></span>
+                    <span class="tag-pill tag-pink" id="detail-phone" style="display:none; padding: 4px 10px; border-radius: 12px; font-size: 11px;"></span>
+                </div>
+                
+                <div style="background:var(--bg-main); padding:24px; border-radius:20px; margin-bottom:30px; border: 1px solid var(--border-color);">
+                    <div style="font-size:11px; color:var(--text-sub); font-weight:800; margin-bottom:12px; text-transform:uppercase; letter-spacing:1px;" data-ko="미식가 코멘트" data-en="Editor's Comment">미식가 코멘트</div>
+                    <div id="detail-comment" style="font-size:16px; font-weight:500; color:var(--text-main); line-height: 1.6; font-style: italic;"></div>
+                    
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:20px;">
+                        <div id="detail-owner" style="display:inline-block; padding:8px 14px; background:white; border-radius:12px; font-size:12px; font-weight:700; color:var(--brand-primary); cursor:pointer; border: 1px solid var(--border-color);"></div>
+                        <button id="detail-follow-btn" style="display:none; padding:8px 16px; background:var(--brand-fab); color:white; border-radius:12px; border:none; font-size:12px; font-weight:800; cursor:pointer; box-shadow: 0 4px 15px rgba(255,90,32,0.3); transition:0.2s;"></button>
+                    </div>
+                </div>
+                
+                <div style="font-size: 12px; font-weight: 800; margin-bottom: 12px; color: var(--text-sub); text-transform:uppercase; letter-spacing:1px;" data-ko="위치 정보" data-en="Location Info">위치 정보</div>
+                <div id="detail-map-area" style="width:100%; height:250px; border-radius:20px; margin-bottom:30px; border: 1px solid var(--border-color); background: #eee;"></div>
+                
+                <button id="detail-kakao-btn" class="btn-primary" style="background:var(--brand-primary); color:#FFF; display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom: 50px; box-shadow:none;" data-ko="상세 정보 및 메뉴 보기" data-en="View Info & Menu">상세 정보 및 메뉴 보기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="edit-profile-modal" class="bottom-modal" style="z-index: 2500;">
+        <div class="modal-body" style="height: auto; min-height: 50vh; padding: 30px 24px; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 24px;">
+                <h2 style="font-weight:800; font-size:20px; color:var(--brand-primary);">프로필 수정</h2>
+                <div onclick="closeEditProfileModal()" style="cursor:pointer; color:var(--text-sub);">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+            </div>
+            
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px;">새로운 프로필 이름 (닉네임)</div>
+            <input type="text" id="edit-nickname-input" class="input-field" placeholder="변경할 닉네임을 입력하세요.">
+            
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; margin-top: 10px;">나만의 미식 철학 (Quote)</div>
+            <input type="text" id="edit-philosophy-input" class="input-field" placeholder="예: 음식은 혀가 아니라 분위기로 먹는 것이다">
+
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; margin-top: 10px;">미식 DNA 태그 (쉼표로 구분)</div>
+            <input type="text" id="edit-dna-input" class="input-field" placeholder="예: 파인다이닝, 노포매니아, 와인러버">
+
+            <div style="font-size: 12px; font-weight: 700; color: var(--text-sub); margin-bottom: 8px; margin-top: 10px;">기타 개인정보</div>
+            <textarea id="edit-personal-info" class="input-field" placeholder="자기소개나 추가 개인정보를 입력할 수 있는 공간입니다." style="height: 80px; resize: none;"></textarea>
+            
+            <button onclick="submitProfileEdit()" class="btn-primary" style="margin-top: 20px;">저장하기</button>
+        </div>
+    </div>
+
+    <div id="ai-image-modal" class="bottom-modal" style="z-index: 2600;">
+        <div class="modal-body" style="height: auto; min-height: 50vh; padding: 30px 24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                <h2 style="font-weight:800; font-size:20px; color:var(--brand-primary);">✨ AI 사진 큐레이션</h2>
+                <div onclick="document.getElementById('ai-image-modal').style.display='none'" style="cursor:pointer; color:var(--text-sub);">
+                    <svg class="svg-icon" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+            </div>
+            <div style="font-size:13px; color:var(--text-sub); margin-bottom:20px;">서버가 실시간으로 수집한 고화질 이미지 중<br>대표 사진으로 사용할 이미지를 선택하세요.</div>
+            <div id="ai-image-target" class="ai-image-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;"></div>
+        </div>
+    </div>
+
+    <script>
+// =========================================================
+        // [1] 글로벌 변수 및 환경 설정
+        // =========================================================
+        const API_URL = `https://perchel-backend.onrender.com`; 
+        
+        let followingList = [];
+        let currentLang = 'ko'; 
+        let globalRegion = 'national';
+        let currentProfileGuideData = {};
+        let currentProfileOwner = '';
+        let currentProfileIsMe = false;
+        let currentProfileLocalRegion = '';
+        let activeGuideTab = 'national';
+        let currentOpenRestId = null; 
+        let userProfiles = {}; 
+        
+        let currentProfilePhilosophy = '';
+        let currentProfileTags = [];
+        let currentProfilePersonalInfo = '';
+        
+        let globalMap = null; 
+        let previewMap = null; 
+        let previewMarker = null;
+
+        let nationalTop50 = [];
+        let regionalTop10 = {};
+
+        // =========================================================
+        // [2] 공통 유틸리티 (배지, 아바타, 식당 자동 사진 매칭)
+        // =========================================================
+        function getBadgeHtml(username) {
+            if (nationalTop50.includes(username)) {
+                return `<div class="s-badge">전국S</div>`;
+            }
+            
+            for (let reg in regionalTop10) {
+                if (regionalTop10[reg] && regionalTop10[reg].includes(username)) {
+                    return `<div class="s-badge regional">${reg}S</div>`;
+                }
+            }
+            
+            return '';
+        }
+
+        function getAvatar(username) {
+            let badge = getBadgeHtml(username);
+            let imgHtml = '';
+            
+            if (userProfiles[username]) {
+                imgHtml = `<img src="${userProfiles[username]}" style="width:100%; height:100%; object-fit:cover;">`;
+            } else {
+                const initial = username ? username.charAt(0).toUpperCase() : '?';
+                imgHtml = `
+                    <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--border-color); color: var(--brand-primary); font-weight: 900; font-size: 1.5em; text-transform: uppercase;">
+                        ${initial}
+                    </div>
+                `;
+            }
+            
+            return `
+                <div style="position:relative; width:100%; height:100%;">
+                    <div class="avatar-circle">
+                        ${imgHtml}
+                    </div>
+                    ${badge}
+                </div>
+            `;
+        }
+
+        // 🔥 대표님이 지적하신 핵심 로직 1: 사진 자동 파싱 (원상 복구)
+        function getSmartRestImage(id, category, userImg) {
+            if (userImg && userImg !== 'null' && userImg !== '') {
+                return userImg; 
+            }
+            
+            const cat = category || "";
+            
+            if (cat.includes('고기') || cat.includes('구이') || cat.includes('소') || cat.includes('돼지')) {
+                return 'https://images.unsplash.com/photo-1544025162-811114cd354a?w=800&q=80';
+            }
+            if (cat.includes('카페') || cat.includes('커피') || cat.includes('디저트')) {
+                return 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=800&q=80';
+            }
+            if (cat.includes('일식') || cat.includes('초밥') || cat.includes('스시')) {
+                return 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=800&q=80';
+            }
+            if (cat.includes('중식') || cat.includes('마라') || cat.includes('짜장')) {
+                return 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=800&q=80';
+            }
+            if (cat.includes('양식') || cat.includes('파스타') || cat.includes('피자')) {
+                return 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=800&q=80';
+            }
+            
+            // 카카오 로컬 이미지 자동 파싱
+            if (id && id !== 'undefined' && id !== 'null') {
+                return `https://img1.kakaocdn.net/cthumb/local/R0x0/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flocalfiy%2Fsearch%2Fplace%2F${id}`;
+            }
+            
+            return 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80'; 
+        }
+
+        async function fetchUserProfiles() {
+            try {
+                const res = await fetch(`${API_URL}/users/profiles`);
+                if (res.ok) {
+                    userProfiles = await res.json();
+                }
+            } catch (error) {
+                console.error("프로필 이미지를 불러오는데 실패했습니다.", error);
+            }
+        }
+
+        function triggerProfileUpload() {
+            if (!currentProfileIsMe) {
+                return;
+            }
+            
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = async function(e) {
+                const file = e.target.files[0];
+                if (!file) {
+                    return;
+                }
+                
+                const fd = new FormData();
+                fd.append('image', file);
+                
+                try {
+                    const res = await fetch(`${API_URL}/user/profile-image`, {
+                        method: 'POST',
+                        headers: { 
+                            'user-id': localStorage.getItem('currentUser') 
+                        },
+                        body: fd
+                    });
+                    
+                    if (res.ok) {
+                        alert("프로필 사진이 성공적으로 변경되었습니다! 📸");
+                        await fetchUserProfiles(); 
+                        fetchGuideView(localStorage.getItem('currentUser')); 
+                    } else { 
+                        alert("업로드 권한이 없습니다."); 
+                    }
+                } catch(error) { 
+                    alert("서버 통신 오류가 발생했습니다."); 
+                }
+            };
+            
+            input.click();
+        }
+
+        // =========================================================
+        // [3] 네비게이션 및 탭 전환
+        // =========================================================
+        function toggleLanguage() {
+            if (currentLang === 'ko') {
+                currentLang = 'en';
+            } else {
+                currentLang = 'ko';
+            }
+            
+            document.getElementById('lang-toggle').innerText = currentLang === 'ko' ? 'EN' : 'KR';
+            
+            document.querySelectorAll('[data-ko]').forEach(function(el) { 
+                el.innerText = el.getAttribute(`data-${currentLang}`); 
+            });
+            
+            document.querySelectorAll('[data-ph-ko]').forEach(function(el) { 
+                el.placeholder = el.getAttribute(`data-ph-${currentLang}`); 
+            });
+            
+            if (document.getElementById('tab-local') && currentProfileLocalRegion) {
+                document.getElementById('tab-local').innerText = currentLang === 'ko' ? `지역 맛집 (${currentProfileLocalRegion})` : `Local (${currentProfileLocalRegion})`;
+            }
+            
+            const activeTab = document.querySelector('.nav-item.active');
+            if (activeTab) {
+                switchTab(activeTab.id.replace('m-', '')); 
+            }
+        }
+
+        function changeGlobalRegion() {
+            globalRegion = document.getElementById('global-region-select').value;
+            
+            const activeTab = document.querySelector('.nav-item.active');
+            if (activeTab) { 
+                const tabId = activeTab.id.replace('m-', '');
+                if (tabId === 'home') {
+                    fetchHomeData();
+                } else if (tabId === 'explore') {
+                    switchExploreTab('ranking'); 
+                } else if (tabId === 'network') {
+                    fetchNetworkData();
+                }
+            }
+        }
+
+        function switchTab(t, skipFetch = false) {
+            const user = localStorage.getItem('currentUser');
+            const topBar = document.getElementById('main-top-bar');
+            
+            if (t === 'home') {
+                topBar.classList.add('transparent');
+            } else {
+                topBar.classList.remove('transparent');
+            }
+            
+            document.querySelectorAll('.tab-view').forEach(function(view) { 
+                view.style.display = 'none'; 
+            });
+            
+            document.getElementById(t + '-view').style.display = 'block';
+            
+            document.querySelectorAll('.nav-item').forEach(function(el) { 
+                el.classList.remove('active'); 
+            });
+            
+            const activeNav = document.getElementById('m-' + t);
+            if (activeNav) {
+                activeNav.classList.add('active');
+            }
+            
+            if (!skipFetch) {
+                if (t === 'home') {
+                    fetchHomeData();
+                } else if (t === 'network') {
+                    fetchNetworkData(); 
+                } else if (t === 'explore') {
+                    switchExploreTab('ranking'); 
+                } else if (t === 'profile') {
+                    fetchGuideView(user);
+                } else if (t === 'map') {
+                    setTimeout(function() { 
+                        initGlobalMap(); 
+                    }, 200); 
+                }
+            }
+            
+            window.scrollTo(0,0);
+        }
+
+        // =========================================================
+        // [4] 카카오맵 API 연동 및 주변 검색 로직
+        // =========================================================
+        function initGlobalMap() {
+            if (typeof kakao === 'undefined' || !kakao.maps) {
+                console.error("카카오맵 API가 로드되지 않았습니다.");
+                return;
+            }
+            
+            kakao.maps.load(function() {
+                const mapContainer = document.getElementById('global-map');
+                if (!mapContainer) {
+                    return;
+                }
+                
+                if (globalMap) { 
+                    globalMap.relayout(); 
+                    moveToMyLocation(); 
+                    setTimeout(function() { 
+                        globalMap.relayout(); 
+                        moveToMyLocation(); 
+                    }, 100);
+                    return; 
+                } 
+                
+                const defaultLoc = new kakao.maps.LatLng(37.5665, 126.9780);
+                globalMap = new kakao.maps.Map(mapContainer, { 
+                    center: defaultLoc, 
+                    level: 6 
+                });
+                
+                moveToMyLocation();
+                loadMapMarkers();
+                
+                setTimeout(function() { 
+                    globalMap.relayout(); 
+                    moveToMyLocation(); 
+                }, 100);
+            });
+        }
+
+        function moveToMyLocation() {
+            if (navigator.geolocation && globalMap) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const loc = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                    globalMap.setCenter(loc);
+                    globalMap.setLevel(4);
+                });
+            } else {
+                console.warn("Geolocation을 지원하지 않거나 지도가 초기화되지 않았습니다.");
+            }
+        }
+
+        async function loadMapMarkers() {
+            try {
+                const res = await fetch(`${API_URL}/feed`);
+                if (!res.ok) {
+                    throw new Error("서버에서 피드 데이터를 가져오는데 실패했습니다.");
+                }
+                
+                let feedList = await res.json();
+                
+                if (!Array.isArray(feedList)) {
+                    feedList = feedList.data || [];
+                }
+                
+                feedList.forEach(function(r) {
+                    if (r.x && r.y) {
+                        const loc = new kakao.maps.LatLng(Number(r.y), Number(r.x));
+                        const marker = new kakao.maps.Marker({ 
+                            position: loc, 
+                            map: globalMap 
+                        });
+                        
+                        kakao.maps.event.addListener(marker, 'click', function() {
+                            const safeName = (r.name || '').replace(/`/g, "");
+                            const safeCat = (r.category || '').replace(/`/g, "");
+                            const safeAddr = (r.address || '').replace(/`/g, "");
+                            const safeComment = (r.comment || '').replace(/`/g, "");
+                            
+                            openRestDetail(
+                                safeName, 
+                                safeCat, 
+                                safeAddr, 
+                                safeComment, 
+                                r.tier || '', 
+                                r.kakao_id || '', 
+                                r.image_url || '', 
+                                r.owner || '', 
+                                r.id || '', 
+                                false
+                            );
+                        });
+                    }
+                });
+            } catch (error) {
+                console.error("마커 로드 중 에러 발생:", error);
+            }
+        }
+
+        // =========================================================
+        // [5] 메인 데이터 렌더링 (홈, 탐색, 네트워크)
+        // =========================================================
+        async function fetchHomeData() {
+            try {
+                const res = await fetch(`${API_URL}/main/data`); 
+                if (!res.ok) {
+                    throw new Error("서버 에러");
+                }
+                
+                const d = await res.json();
+                
+                nationalTop50 = d.national_top_50 || [];
+                regionalTop10 = d.regional_top_10 || {};
+                
+                let displayEditors = [];
+                const titleEl = document.getElementById('home-editor-title');
+
+                if (globalRegion === 'national') {
+                    displayEditors = d.all_editors || [];
+                    if (titleEl) {
+                        titleEl.innerText = currentLang === 'ko' ? "인기 미식가" : "Featured Gourmets";
+                    }
+                } else {
+                    const regionalUsernames = regionalTop10[globalRegion] || [];
+                    displayEditors = (d.all_editors || []).filter(function(e) {
+                        return regionalUsernames.includes(e.username);
+                    });
+                    
+                    if (titleEl) {
+                        titleEl.innerText = currentLang === 'ko' ? `${globalRegion}지역 추천 미식가` : `Top in ${globalRegion}`;
+                    }
+                }
+
+                if (displayEditors.length === 0) {
+                    document.getElementById('editor-list-container').innerHTML = `
+                        <div style="padding:20px; color:var(--text-sub); font-size:13px; text-align:center; width:100%;">
+                            ${currentLang === 'ko' ? '이 지역에 활동하는 미식가가 없습니다.' : 'No gourmets in this region yet.'}
+                        </div>
+                    `;
+                } else {
+                    let editorsHtml = '';
+                    displayEditors.forEach(function(e) {
+                        const isMe = (e.username === localStorage.getItem('currentUser'));
+                        const isFollow = followingList.includes(e.username);
+                        
+                        let followHtml = '';
+                        if (!isMe) {
+                            followHtml = `
+                                <button class="editor-follow-btn" onclick="event.stopPropagation(); const btn = this; executeToggleFollow('${e.username}').then(() => { btn.innerText = btn.innerText.includes('✓') ? '+ 팔로우' : '✓ 팔로잉'; });">
+                                    ${isFollow ? '✓ 팔로잉' : '+ 팔로우'}
+                                </button>
+                            `;
+                        }
+
+                        editorsHtml += `
+                            <div class="editor-card" onclick="fetchGuideView('${e.username}', true)">
+                                <div class="editor-img-container" style="overflow:visible !important;">
+                                    ${getAvatar(e.username)}
+                                </div>
+                                <div style="font-weight:800; font-size:15px; color:var(--brand-primary); margin-bottom:2px;">
+                                    ${e.display_name || e.username}
+                                </div>
+                                <div style="font-size:11px; color:var(--text-sub);">
+                                    ${e.followers} ${currentLang === 'ko' ? '팔로워' : 'Followers'}
+                                </div>
+                                ${followHtml}
+                            </div>
+                        `;
+                    });
+                    document.getElementById('editor-list-container').innerHTML = editorsHtml;
+                }
+                
+                const renderer = function(list, tid, isPopular = false) {
+                    if (globalRegion !== 'national') {
+                        list = list.filter(function(r) { 
+                            return (r.address || '').includes(globalRegion); 
+                        });
+                    }
+                    
+                    if (list.length === 0) { 
+                        document.getElementById(tid).innerHTML = `
+                            <div style="grid-column: span 2; padding:20px; color:var(--text-sub); text-align:center; font-size:13px;">
+                                ${currentLang === 'ko' ? '해당 지역의 식당이 없습니다.' : 'No restaurants in this region.'}
+                            </div>
+                        `; 
+                        return; 
+                    }
+                    
+                    let html = '';
+                    list.forEach(function(r) {
+                        const finalImg = getSmartRestImage(r.kakao_id, r.category, r.image_url);
+                        const safeName = (r.name || '').replace(/`/g, "");
+                        const safeCat = (r.category || '').replace(/`/g, "");
+                        const safeAddr = (r.address || '').replace(/`/g, "");
+                        const safeComment = (r.comment || '').replace(/`/g, "");
+                        
+                        let subInfoHtml = '';
+                        if (isPopular && r.save_count) {
+                            subInfoHtml = `🔥 ${r.save_count}명 등록`;
+                        } else {
+                            subInfoHtml = `✍️ ${r.owner}`;
+                        }
+                        
+                        let bookmarkHtml = '';
+                        if (r.owner !== localStorage.getItem('currentUser')) {
+                            bookmarkHtml = `
+                                <div class="bookmark-btn-mini" onclick="event.stopPropagation(); executeBookmark('${r.id}')" style="position:absolute; bottom:8px; right:8px; background:rgba(255,255,255,0.9); padding:6px; border-radius:50%; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
+                                    <svg viewBox="0 0 24 24" style="width:16px; height:16px; stroke:var(--brand-primary); fill:none; stroke-width:2;">
+                                        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                </div>
+                            `;
+                        }
+
+                        html += `
+                            <div class="rest-card" onclick="openRestDetail(\`${safeName}\`, \`${safeCat}\`, \`${safeAddr}\`, \`${safeComment}\`, \`${r.tier||''}\`, \`${r.kakao_id||''}\`, \`${r.image_url||''}\`, \`${r.owner||''}\`, \`${r.id||''}\`, false)">
+                                <div class="rest-img-wrapper">
+                                    <img class="rest-img" src="${finalImg}" onerror="this.src='https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80'">
+                                    ${bookmarkHtml}
+                                </div>
+                                <div class="rest-name">${r.name}</div>
+                                <div style="font-size:11px; color:var(--text-sub); padding: 0 12px 12px;">
+                                    ${subInfoHtml}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    document.getElementById(tid).innerHTML = html;
+                };
+                
+                renderer(d.popular_places || [], 'popular-list-container', true); 
+                renderer(d.new_restaurants || [], 'new-list-container', false);
+                
+            } catch(error) {
+                console.error("메인 데이터 페치 에러:", error);
+            }
+        }
+
+        async function fetchNetworkData() {
+            try {
+                const res = await fetch(`${API_URL}/main/data`); 
+                if (!res.ok) {
+                    throw new Error("서버 에러 발생");
+                }
+                
+                const d = await res.json();
+                
+                nationalTop50 = d.national_top_50 || [];
+                regionalTop10 = d.regional_top_10 || {};
+
+                const curUser = localStorage.getItem('currentUser');
+                const me = (d.all_editors || []).find(function(e) {
+                    return e.username === curUser;
+                });
+                
+                if (me) {
+                    followingList = me.following || [];
+                }
+                
+                let followingHtml = '';
+                
+                if (followingList.length > 0) {
+                    followingList.forEach(function(u) {
+                        const targetUser = (d.all_editors || []).find(function(e) {
+                            return e.username === u;
+                        });
+                        const displayName = targetUser ? (targetUser.display_name || u) : u;
+
+                        followingHtml += `
+                            <div class="user-result-item" onclick="fetchGuideView('${u}', true)" style="display:flex; align-items:center; padding:16px; background:var(--bg-card); border-radius:16px; margin-bottom:12px; box-shadow:var(--shadow-soft); cursor:pointer;">
+                                <div style="width:48px; height:48px; border-radius:50%; overflow:visible; margin-right:16px;">
+                                    ${getAvatar(u)}
+                                </div>
+                                <div style="flex:1;">
+                                    <div style="font-weight:700; font-size:15px; color:var(--text-main); margin-bottom:4px;">
+                                        ${displayName}
+                                    </div>
+                                    <div class="tag-pill tag-blue" style="font-size:10px; padding:4px 8px; background:rgba(28, 30, 33, 0.05); color:var(--brand-primary); display:inline-block; border-radius:8px;">
+                                        ✓ ${currentLang === 'ko' ? '팔로잉' : 'Following'}
+                                    </div>
+                                </div>
+                                <div style="color:var(--text-sub);">
+                                    <svg class="svg-icon" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    followingHtml = `
+                        <div style="text-align:center; padding:40px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); color:var(--text-sub); font-size:13px;">
+                            ${currentLang === 'ko' ? '아직 팔로우한 미식가가 없습니다.' : 'No following yet.'}
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('following-list-container').innerHTML = followingHtml;
+
+                let recommendedSet = new Set();
+                followingList.forEach(function(followedUser) {
+                    const fUserObj = (d.all_editors || []).find(function(e) {
+                        return e.username === followedUser;
+                    });
+                    
+                    if (fUserObj && fUserObj.following) {
+                        fUserObj.following.forEach(function(u) {
+                            recommendedSet.add(u);
+                        });
+                    }
+                });
+
+                let recUsernames = Array.from(recommendedSet).filter(function(u) {
+                    return u !== curUser && !followingList.includes(u);
+                });
+
+                if (recUsernames.length === 0) {
+                    recUsernames = (d.all_editors || [])
+                        .filter(function(e) {
+                            return e.username !== curUser && !followingList.includes(e.username);
+                        })
+                        .slice(0, 10)
+                        .map(function(e) {
+                            return e.username;
+                        });
+                }
+
+                let recHtml = '';
+                if (recUsernames.length > 0) {
+                    const recommended = recUsernames.map(function(u) {
+                        return (d.all_editors || []).find(function(e) {
+                            return e.username === u;
+                        });
+                    }).filter(Boolean);
+                    
+                    recHtml += `<div class="editor-row" style="padding-bottom: 10px;">`; 
+                    
+                    recommended.forEach(function(e) {
+                        recHtml += `
+                            <div class="editor-card" onclick="fetchGuideView('${e.username}', true)">
+                                <div class="editor-img-container" style="overflow:visible !important;">
+                                    ${getAvatar(e.username)}
+                                </div>
+                                <div style="font-weight:800; font-size:14px; color:var(--brand-primary);">
+                                    ${e.display_name || e.username}
+                                </div>
+                                <div style="font-size:11px; color:var(--text-sub); margin-top:4px;">
+                                    ${currentLang === 'ko' ? '게시물' : 'Posts'}: ${e.rest_count}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    recHtml += `</div>`; 
+                } else {
+                    recHtml = `
+                        <div style="text-align:center; padding:40px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); color:var(--text-sub); font-size:13px;">
+                            ${currentLang === 'ko' ? '추천할 미식가가 없습니다.' : 'No recommendations.'}
+                        </div>
+                    `;
+                }
+                
+                document.getElementById('recommended-list-container').innerHTML = recHtml;
+                
+            } catch(error) {
+                console.error("네트워크 탭 데이터 로드 실패", error);
+            }
+        }
+// =========================================================
+        // [5] 랭킹 및 피드 검색 로직
+        // =========================================================
+        function switchExploreTab(tab) {
+            if (tab === 'ranking') {
+                document.getElementById('tab-explore-ranking').style.background = 'var(--brand-primary)';
+                document.getElementById('tab-explore-ranking').style.color = '#FFFFFF';
+                document.getElementById('tab-explore-feed').style.background = '#EAEAEA';
+                document.getElementById('tab-explore-feed').style.color = '#111111';
+                
+                document.getElementById('explore-ranking-area').style.display = 'block';
+                document.getElementById('explore-feed-area').style.display = 'none';
+                fetchRankingData(); 
+            } else {
+                document.getElementById('tab-explore-feed').style.background = 'var(--brand-primary)';
+                document.getElementById('tab-explore-feed').style.color = '#FFFFFF';
+                document.getElementById('tab-explore-ranking').style.background = '#EAEAEA';
+                document.getElementById('tab-explore-ranking').style.color = '#111111';
+                
+                document.getElementById('explore-feed-area').style.display = 'block';
+                document.getElementById('explore-ranking-area').style.display = 'none';
+                fetchExploreFeed(); 
+            }
+        }
+
+        function renderRankingList(rankingData, container) {
+            let html = '';
+            
+            if(rankingData.length === 0) {
+                html = `
+                    <div style="text-align:center; padding:40px; border:1px dashed var(--border-color); border-radius:12px; color:var(--text-sub); font-size:13px;">
+                        검색된 조건의 랭킹 데이터가 없습니다.
+                    </div>
+                `;
+            } else {
+                rankingData.forEach(function(r, idx) {
+                    const finalImg = getSmartRestImage(r.kakao_id, r.category, r.image_url);
+                    
+                    let rankBadge = `<div style="font-size:18px; font-weight:900; color:var(--text-sub);">${idx + 1}</div>`;
+                    if(idx === 0) {
+                        rankBadge = `<div style="font-size:24px;">🥇</div>`;
+                    } else if (idx === 1) {
+                        rankBadge = `<div style="font-size:24px;">🥈</div>`;
+                    } else if (idx === 2) {
+                        rankBadge = `<div style="font-size:24px;">🥉</div>`;
+                    }
+
+                    html += `
+                        <div class="user-result-item" onclick="closeGlobalSearchModal(); openRestDetail(\`${(r.name||'').replace(/'/g,"")}\`, \`${(r.category||'').replace(/'/g,"")}\`, \`${(r.address||'').replace(/'/g,"")}\`, '', '', \`${r.kakao_id}\`, \`${r.image_url}\`, '', \`${r.id}\`, false)" style="display:flex; align-items:center; padding:16px; background:var(--bg-card); border-radius:16px; margin-bottom:12px; box-shadow:var(--shadow-soft); cursor:pointer;">
+                            <div style="width:40px; text-align:center; margin-right:10px;">
+                                ${rankBadge}
+                            </div>
+                            <div style="width:60px; height:60px; border-radius:12px; overflow:hidden; flex-shrink:0; margin-right:16px;">
+                                <img src="${finalImg}" style="width:100%; height:100%; object-fit:cover;">
+                            </div>
+                            <div style="flex:1;">
+                                <div style="font-weight:800; font-size:15px; color:var(--text-main); margin-bottom:4px;">
+                                    ${r.name}
+                                </div>
+                                <div style="font-size:11px; color:var(--text-sub); margin-bottom:6px;">
+                                    ${r.category.split('>').pop()}
+                                </div>
+                                <div class="tag-pill tag-pink" style="font-size:10px; padding:4px 8px; background:rgba(255,90,32,0.1); color:var(--brand-fab); display:inline-block; border-radius:8px; font-weight:700;">
+                                    🔥 ${r.save_count}명이 서열에 등록
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            container.innerHTML = html;
+        }
+
+        async function fetchRankingData() {
+            const keyword = document.getElementById('ranking-search-input').value.trim();
+            const container = document.getElementById('ranking-list-container');
+            
+            container.innerHTML = `
+                <div style="text-align:center; padding:30px; color:var(--brand-primary); font-size:13px; font-weight:700;">
+                    랭킹을 분석 중입니다... ⏳
+                </div>
+            `;
+            
+            try {
+                const res = await fetch(`${API_URL}/ranking?keyword=${encodeURIComponent(keyword)}`);
+                const d = await res.json();
+                renderRankingList(d.ranking, container);
+            } catch(e) { 
+                container.innerHTML = `
+                    <div class="server-error-banner" style="color: red; text-align: center; padding: 20px;">
+                        데이터를 불러오지 못했습니다.
+                    </div>
+                `;
+            }
+        }
+
+        function openGlobalSearchModal() {
+            document.getElementById('global-search-modal').style.display = 'flex';
+            document.getElementById('global-ranking-input').value = '';
+            document.getElementById('global-search-results').innerHTML = `
+                <div style="text-align:center; padding:40px 20px; color:var(--text-sub); font-size:13px;">
+                    원하시는 메뉴나 식당 이름을 검색하시면<br>가장 많이 등록된 순서대로 랭킹을 보여드립니다.
+                </div>
+            `;
+        }
+        
+        function closeGlobalSearchModal() {
+            document.getElementById('global-search-modal').style.display = 'none';
+        }
+        
+        async function executeGlobalSearch() {
+            const keyword = document.getElementById('global-ranking-input').value.trim();
+            const container = document.getElementById('global-search-results');
+            
+            container.innerHTML = `
+                <div style="text-align:center; padding:30px; color:var(--brand-primary); font-size:13px; font-weight:700;">
+                    랭킹을 분석 중입니다... ⏳
+                </div>
+            `;
+            
+            try {
+                const res = await fetch(`${API_URL}/ranking?keyword=${encodeURIComponent(keyword)}`);
+                const d = await res.json();
+                renderRankingList(d.ranking, container);
+            } catch(e) {
+                container.innerHTML = `
+                    <div class="server-error-banner" style="color: red; text-align: center; padding: 20px;">
+                        데이터를 불러오지 못했습니다.
+                    </div>
+                `;
+            }
+        }
+
+        async function fetchExploreFeed() {
+            try {
+                const current = localStorage.getItem('currentUser');
+                const res = await fetch(`${API_URL}/feed`); 
+                if (!res.ok) {
+                    throw new Error("서버 에러 발생");
+                }
+                
+                let feedList = await res.json();
+                
+                if (!Array.isArray(feedList)) {
+                    feedList = feedList.data || [];
+                }
+                
+                if (globalRegion !== 'national') {
+                    feedList = feedList.filter(function(r) { 
+                        return (r.address || '').includes(globalRegion); 
+                    });
+                }
+
+                if (!feedList || feedList.length === 0) {
+                    document.getElementById('feed-scroll-area').innerHTML = `
+                        <div style="text-align:center; padding:60px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); color:var(--text-sub); font-size:14px;">
+                            ${currentLang === 'ko' ? '해당 지역에 아직 소식이 없습니다.' : 'No posts here.'}
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                feedList.reverse().forEach(function(r) {
+                    const isMe = (r.owner === current); 
+                    const isFollowing = followingList.includes(r.owner);
+                    const finalImg = getSmartRestImage(r.kakao_id, r.category, r.image_url);
+                    const fallbackImg = "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80";
+                    
+                    const safeName = (r.name || '').replace(/`/g, "");
+                    const safeCat = (r.category || '').replace(/`/g, "");
+                    const safeAddr = (r.address || '').replace(/`/g, "");
+                    const safeComment = (r.comment || '').replace(/`/g, "");
+                    
+                    const likesCount = (r.likes || []).length;
+                    const isLiked = (r.likes || []).includes(current);
+
+                    let socialHtml = `
+                        <div class="social-bar" onclick="event.stopPropagation()" style="display:flex; justify-content:space-between; align-items:center; padding-top:16px; border-top:1px solid var(--border-color); margin-top:16px;">
+                            <div style="display:flex; gap:16px;">
+                                <div id="like-btn-${r.id}" class="action-btn ${isLiked ? 'liked' : ''}" onclick="executeLike('${r.id}')" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                    <svg class="svg-icon" viewBox="0 0 24 24" style="width:20px; height:20px; stroke:var(--text-sub); fill:${isLiked ? 'var(--brand-fab)' : 'none'};"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                                    <span id="like-count-${r.id}" style="color:var(--text-sub); font-size:13px; font-weight:600;">${likesCount}</span>
+                                </div>
+                                <div class="action-btn" onclick="openRestDetail(\`${safeName}\`, \`${safeCat}\`, \`${safeAddr}\`, \`${safeComment}\`, \`${r.tier||''}\`, \`${r.kakao_id||''}\`, \`${r.image_url||''}\`, \`${r.owner||''}\`, \`${r.id||''}\`, false)" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                    <svg class="svg-icon" viewBox="0 0 24 24" style="width:20px; height:20px; stroke:var(--text-sub);"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                </div>
+                            </div>
+                    `;
+                    
+                    if (!isMe) {
+                        socialHtml += `
+                            <div class="action-btn" onclick="executeBookmark('${r.id}')" style="cursor:pointer;">
+                                <svg class="svg-icon" viewBox="0 0 24 24" style="width:20px; height:20px; stroke:var(--text-sub);"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                            </div>
+                        `;
+                    }
+                    
+                    socialHtml += `</div>`;
+
+                    html += `
+                    <div class="feed-card" style="background:var(--bg-card); border-radius:var(--radius-xl); padding:24px; box-shadow:var(--shadow-soft); border:1px solid var(--border-color); margin-bottom:30px; cursor:pointer;" onclick="openRestDetail(\`${safeName}\`, \`${safeCat}\`, \`${safeAddr}\`, \`${safeComment}\`, \`${r.tier||''}\`, \`${r.kakao_id||''}\`, \`${r.image_url||''}\`, \`${r.owner||''}\`, \`${r.id||''}\`, false)">
+                        
+                        <div class="feed-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;" onclick="event.stopPropagation()">
+                            <div class="feed-user" onclick="fetchGuideView('${r.owner}', true)" style="font-weight:800; cursor:pointer; display:flex; align-items:center; gap:10px; color:var(--brand-primary);">
+                                <div style="width:36px; height:36px; border-radius:50%; overflow:visible;">
+                                    ${getAvatar(r.owner)}
+                                </div>
+                                ${r.owner}
+                            </div>
+                            ${!isMe ? `<button onclick="executeToggleFollow('${r.owner}')" style="background:transparent; border:1px solid var(--border-color); color:var(--text-sub); padding:6px 12px; border-radius:8px; font-weight:600; font-size:11px; cursor:pointer;">${isFollowing?'✓ 팔로잉':'Follow'}</button>` : ''}
+                        </div>
+                        
+                        <div style="position:relative; width:100%; border-radius:16px; overflow:hidden; margin-bottom:20px;">
+                            <img src="${finalImg}" class="feed-main-img" onerror="this.src='${fallbackImg}'" style="width:100%; height:260px; object-fit:cover;">
+                            ${r.tier ? `<div class="rest-badge" style="position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.7); color:white; padding:6px 12px; border-radius:10px; font-size:11px; font-weight:800;">⭐️ ${r.tier.split(' ')[0]}</div>` : ''}
+                        </div>
+                        
+                        <div class="feed-body" style="padding:0;">
+                            <div class="feed-rest-name" style="font-size:20px; font-weight:900; color:var(--text-main); margin-bottom:8px;">
+                                ${r.name}
+                            </div>
+                            <div style="font-size:12px; color:var(--text-sub); margin-bottom:16px; font-weight:500; display:flex; align-items:center; gap:6px;">
+                                <span>📍 ${r.address.split(' ')[0]} ${r.address.split(' ')[1] || ''}</span>
+                                <span>•</span>
+                                <span>${r.category.split('>').pop()}</span>
+                            </div>
+                            ${r.comment ? `<div style="font-size:14px; color:var(--text-main); line-height:1.6; font-weight:400;">"${r.comment}"</div>` : ''}
+                            
+                            ${socialHtml}
+                        </div>
+                    </div>`;
+                });
+                
+                document.getElementById('feed-scroll-area').innerHTML = html;
+                
+            } catch(error) {
+                console.error("피드 로드 실패:", error);
+            }
+        }
+
+        // =========================================================
+        // [6] 핵심: 프로필 (다크 카드) 및 서열표 엔진 (완벽 복구)
+        // =========================================================
+        async function fetchGuideView(u, isForeign = false) {
+            if (isForeign) { 
+                switchTab('profile', true); 
+                document.getElementById('registration-trigger').style.display = 'none'; 
+            } else { 
+                document.getElementById('registration-trigger').style.display = 'block'; 
+            }
+            
+            const curUser = localStorage.getItem('currentUser');
+            const isMe = (u === curUser);
+            const isFollowing = followingList.includes(u);
+            
+            try {
+                const res = await fetch(`${API_URL}/guide/${u}`);
+                if (!res.ok) {
+                    throw new Error("서버 에러 발생");
+                }
+                
+                const data = await res.json(); 
+                
+                currentProfileGuideData = data.guide;
+                currentProfileOwner = u;
+                currentProfileIsMe = isMe;
+                
+                currentProfilePhilosophy = data.philosophy || '';
+                currentProfileTags = data.taste_tags || [];
+                currentProfilePersonalInfo = data.personal_info || '';
+
+                if (isMe) {
+                    const myRes = await fetch(`${API_URL}/restaurants`, { 
+                        headers: { 'user-id': u } 
+                    });
+                    const myData = await myRes.json();
+                    
+                    currentProfileGuideData["평가 대기 중 ⏳"] = myData.data.filter(function(r) { 
+                        return !r.tier; 
+                    });
+                }
+
+                let regionCounts = {}; 
+                let maxCount = 0; 
+                currentProfileLocalRegion = '';
+                
+                Object.values(currentProfileGuideData).forEach(function(tierList) {
+                    tierList.forEach(function(item) {
+                        if (item.address) {
+                            let region = item.address.split(' ')[0];
+                            regionCounts[region] = (regionCounts[region] || 0) + 1;
+                            
+                            if (regionCounts[region] > maxCount) { 
+                                maxCount = regionCounts[region]; 
+                                currentProfileLocalRegion = region; 
+                            }
+                        }
+                    });
+                });
+
+                const philosophyHtml = currentProfilePhilosophy 
+                    ? `<div class="profile-philosophy">"${currentProfilePhilosophy}"</div>` 
+                    : '';
+                
+                const tagsHtml = currentProfileTags.length > 0 
+                    ? `<div class="profile-dna-tags">${currentProfileTags.map(function(t) { return `<div class="dna-tag">#${t}</div>`; }).join('')}</div>`
+                    : '';
+                    
+                const badgesHtml = data.badges && data.badges.length > 0
+                    ? `<div class="profile-badges">${data.badges.map(function(b) { return `<span class="badge-item">${b}</span>`; }).join('')}</div>`
+                    : '';
+
+                let profileActionBtn = '';
+                if (!isMe) {
+                    profileActionBtn = `
+                        <button onclick="executeToggleFollow('${u}', true)" style="background:var(--brand-fab); color:#FFF; border:none; padding:12px 36px; border-radius:24px; font-weight:800; font-size:13px; cursor:pointer; margin-bottom:10px; box-shadow:var(--shadow-fab); transition:all 0.2s;">
+                            ${isFollowing ? (currentLang==='ko'?'✓ 팔로잉':'✓ Following') : (currentLang==='ko'?'+ 팔로우':'+ Follow')}
+                        </button>
+                    `;
+                } else {
+                    profileActionBtn = `
+                        <button class="my-journal-btn" onclick="openEditProfileModal()" style="background:rgba(255,255,255,0.1); color:#FFF; border:1px solid rgba(255,255,255,0.3); padding:8px 24px; border-radius:20px; font-size:11px; font-weight:700; cursor:pointer;">
+                            EDIT PROFILE
+                        </button>
+                    `;
+                }
+
+                document.getElementById('profile-header-target').innerHTML = `
+                    <div class="profile-dash">
+                        <div class="dash-header">
+                            <div class="dash-pic-container" ${isMe ? `onclick="triggerProfileUpload()"` : ''}>
+                                ${getAvatar(u)}
+                            </div>
+                            
+                            <div style="font-size:26px; font-weight:900; margin-bottom:8px; display:flex; justify-content:center; align-items:center; gap:8px; letter-spacing:-0.5px;">
+                                <span id="display-profile-name">${data.nickname || u}</span>
+                            </div>
+                            
+                            ${philosophyHtml}
+                            ${tagsHtml}
+                            ${badgesHtml}
+                            
+                            ${profileActionBtn}
+                        </div>
+                        
+                        <div class="dash-stats" id="profile-stats-bar"></div>
+                    </div>
+                `;
+
+            } catch(error) {
+                console.error("프로필 데이터 로드 실패", error);
+            }
+            
+            fetchStats(u);
+
+            document.getElementById('guide-controls-target').style.display = 'block';
+            document.getElementById('guide-search-input').value = '';
+            
+            switchGuideTab('national'); 
+        }
+
+        function switchGuideTab(tab) {
+            activeGuideTab = tab;
+            renderGuideSheet();
+        }
+
+        function renderGuideSheet() {
+            let searchQuery = '';
+            if (document.getElementById('guide-search-input')) {
+                searchQuery = document.getElementById('guide-search-input').value.toLowerCase();
+            }
+            
+            const tierMeta = { 
+                "⭐⭐⭐ (3스타)": { title: "3 STARS", sub: "NO.1 CLASS", color: "var(--brand-yellow)" }, 
+                "⭐⭐ (2스타)": { title: "2 STARS", sub: "PREMIUM", color: "#FFFFFF" }, 
+                "⭐ (1스타)": { title: "1 STAR", sub: "EXCELLENT", color: "#CCCCCC" }, 
+                "단순 추천": { title: "RECOMMENDED", sub: "REC", color: "#A86A51" }, 
+                "평가 대기 중 ⏳": { title: "WISHLIST", sub: "WISH", color: "#777777" } 
+            };
+            
+            let html = '';
+            let hasAnyItem = false;
+            
+            for(let key in tierMeta) {
+                let items = currentProfileGuideData[key] || [];
+                
+                items = items.filter(function(item) {
+                    let matchSearch = true;
+                    if (searchQuery) {
+                        const nameStr = (item.name || '').toLowerCase();
+                        const catStr = (item.category || '').toLowerCase();
+                        const addrStr = (item.address || '').toLowerCase();
+                        
+                        matchSearch = nameStr.includes(searchQuery) || catStr.includes(searchQuery) || addrStr.includes(searchQuery);
+                    }
+                    
+                    let matchTab = true;
+                    if (activeGuideTab !== 'national') {
+                        matchTab = (item.address || '').startsWith(currentProfileLocalRegion);
+                    }
+                    
+                    return matchSearch && matchTab;
+                });
+
+                if (items.length > 0) {
+                    hasAnyItem = true;
+                    const meta = tierMeta[key];
+                    
+                    html += `
+                        <div class="tier-section" style="margin-bottom: 30px;">
+                            <div class="tier-header-title">
+                                ${meta.title} 
+                                <span style="font-size:14px; color:var(--text-sub);">${items.length}</span>
+                            </div>
+                            <div class="guide-grid">
+                    `;
+                    
+                    items.forEach(function(i) {
+                        const safeName = (i.name || '').replace(/'/g, "");
+                        const safeCat = (i.category || '').replace(/'/g, "");
+                        const safeAddr = (i.address || '').replace(/'/g, "");
+                        const safeComment = (i.comment || '').replace(/'/g, "");
+                        const finalImg = getSmartRestImage(i.kakao_id, i.category, i.image_url);
+                        
+                        let selectHtml = '';
+                        if (currentProfileIsMe) {
+                            selectHtml = `
+                                <select onchange="executeChangeTier('${i.id}', this.value)" onclick="event.stopPropagation()" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:#FFF; border:1px solid rgba(255,255,255,0.3); border-radius:8px; font-size:11px; padding:6px; outline:none; font-weight:600;">
+                                    <option value="">등급수정</option>
+                                    <option value="⭐⭐⭐ (3스타)" ${i.tier === '⭐⭐⭐ (3스타)' ? 'selected' : ''}>3 Stars</option>
+                                    <option value="⭐⭐ (2스타)" ${i.tier === '⭐⭐ (2스타)' ? 'selected' : ''}>2 Stars</option>
+                                    <option value="⭐ (1스타)" ${i.tier === '⭐ (1스타)' ? 'selected' : ''}>1 Star</option>
+                                    <option value="단순 추천" ${i.tier === '단순 추천' ? 'selected' : ''}>Rec</option>
+                                    <option value="" ${!i.tier ? 'selected' : ''}>Wishlist</option>
+                                </select>
+                            `;
+                        }
+
+                        html += `
+                            <div class="guide-card" onclick="openRestDetail('${safeName}', '${safeCat}', '${safeAddr}', '${safeComment}', '${i.tier||''}', '${i.kakao_id||''}', '${i.image_url||''}', '${currentProfileOwner}', '${i.id||''}')">
+                                <img class="guide-card-bg" src="${finalImg}">
+                                <div class="guide-card-overlay">
+                                    <div class="guide-tier-text" style="color:${meta.color};">${meta.sub}</div>
+                                    <div class="guide-name-text">${i.name}</div>
+                                    <div style="font-size:10px; color:#ddd; margin-top:4px; font-weight:500;">
+                                        ${i.address ? i.address.split(' ')[0] : ''} · ${i.category ? i.category.split('>').pop().trim() : ''}
+                                    </div>
+                                </div>
+                                ${selectHtml}
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            
+            if (!hasAnyItem) {
+                html = `
+                    <div style="text-align:center; padding:50px 20px; border:1px dashed var(--border-color); border-radius:var(--radius-lg); color:var(--text-sub); font-size:13px; font-weight:600;">
+                        ${currentLang === 'ko' ? '기록된 맛집이 없습니다.' : 'No places recorded yet.'}
+                    </div>
+                `;
+            }
+            
+            document.getElementById('michelin-tables-target').innerHTML = html;
+        }
+
+        async function fetchStats(u) {
+            try {
+                const res = await fetch(`${API_URL}/profile/stats`, { 
+                    headers: { 'user-id': u } 
+                });
+                const d = await res.json();
+                
+                const bar = document.getElementById('profile-stats-bar');
+                if (bar) {
+                    let statsHtml = '';
+                    Object.keys(d.stats).forEach(function(k) {
+                        statsHtml += `
+                            <div style="text-align:center;">
+                                <div style="font-weight:800; font-size:20px; line-height:1; color:#FFFFFF;">
+                                    ${d.stats[k].count}
+                                </div>
+                                <div style="font-size:10px; font-weight:600; color:rgba(255,255,255,0.6); margin-top:6px; text-transform:uppercase; letter-spacing:1px;">
+                                    ${k.split(' ')[0]}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    bar.innerHTML = statsHtml;
+                }
+            } catch(e) {
+                console.error("통계 정보를 불러오는데 실패했습니다.", e);
+            }
+        }
+
+        async function executeChangeTier(id, tier) {
+            const user = localStorage.getItem('currentUser');
+            try {
+                await fetch(`${API_URL}/restaurants/${id}`, { 
+                    method: 'PUT', 
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'user-id': user 
+                    }, 
+                    body: JSON.stringify({ tier: tier }) 
+                });
+                fetchGuideView(user);
+            } catch(e) {
+                console.error("티어 변경 실패", e);
+            }
+        }
+
+        async function executeToggleFollow(target, isFromProfile = false) {
+            const user = localStorage.getItem('currentUser');
+            try {
+                const res = await fetch(`${API_URL}/follow/${target}`, { 
+                    method: 'POST', 
+                    headers: { 'user-id': user } 
+                });
+                
+                if (res.ok) { 
+                    const data = await res.json();
+                    followingList = data.following; 
+                    
+                    if (isFromProfile) {
+                        fetchGuideView(target, true); 
+                    } else {
+                        fetchNetworkData(); 
+                    }
+                }
+            } catch(e) {
+                console.error("팔로우 토글 실패", e);
+            }
+        }
+
+        // =========================================================
+        // [8] 장소 검색 및 새로운 등기 (글쓰기) 로직
+        // =========================================================
+        function openSearchModal() { 
+            switchTab('profile'); 
+            document.getElementById('search-modal').style.display = 'flex'; 
+        }
+        
+        function closeSearchModal() { 
+            document.getElementById('search-modal').style.display = 'none'; 
+        }
+
+        async function executeKakaoSearch() {
+            const keyword = document.getElementById('search-keyword').value;
+            if (!keyword) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/search/kakao?query=${encodeURIComponent(keyword)}`);
+                const d = await res.json();
+                
+                if (d.errorType || d.msg || d.code) {
+                    alert(`🚨 카카오 서버 차단 사유: ${d.message || d.msg || d.code}`);
+                    return;
+                }
+
+                const target = document.getElementById('search-results-target');
+                
+                if (!d.documents || d.documents.length === 0) { 
+                    target.innerHTML = `
+                        <div style="text-align:center; padding:40px 20px; color:var(--text-sub); font-size:13px; font-weight:600;">
+                            ${currentLang === 'ko' ? '검색 결과가 없습니다.' : 'No results.'}
+                        </div>
+                    `; 
+                    return; 
+                }
+                
+                let html = '';
+                d.documents.forEach(function(doc) {
+                    const safeName = doc.place_name.replace(/'/g, "\\'");
+                    const safeCat = doc.category_name.replace(/'/g, "\\'");
+                    const safeAddr = (doc.road_address_name || doc.address_name).replace(/'/g, "\\'");
+                    const phone = doc.phone || '';
+                    
+                    html += `
+                        <div class="user-result-item" onclick="preparePosting('${safeName}', '${safeCat}', '${safeAddr}', '${doc.id}', ${doc.x}, ${doc.y}, '${phone}')" style="border:none; border-bottom:1px solid var(--border-color); border-radius:0; box-shadow:none; padding:16px 0; background:transparent;">
+                            <div style="flex:1;">
+                                <div style="font-weight:800; font-size:15px; color:var(--brand-primary); margin-bottom:4px;">
+                                    ${doc.place_name}
+                                </div>
+                                <div style="font-size:12px; color:var(--text-sub); font-weight:500;">
+                                    ${doc.road_address_name || doc.address_name}
+                                </div>
+                            </div>
+                            <div style="color:var(--brand-fab);">
+                                <svg class="svg-icon" viewBox="0 0 24 24" style="width:20px; height:20px;">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                target.innerHTML = html;
+                
+            } catch(e) {
+                alert("🚨 파이썬 백엔드 서버가 멈춰있습니다. 터미널을 확인해주세요.");
+            }
+        }
+
+        function handleImagePreview(input) {
+            const photoBox = document.getElementById('selected-rest-photo');
+            
+            if (input.files && input.files.length > 0) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoBox.style.backgroundImage = `url('${e.target.result}')`;
+                    
+                    const count = input.files.length;
+                    const statusText = count > 1 
+                        ? `🔥 총 ${count}장의 사진 선택됨` 
+                        : `✅ 사진 1장 선택됨`;
+                    
+                    photoBox.innerHTML = `
+                        <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.7); color:white; font-size:12px; font-weight:800; text-align:center; padding: 10px 0;">
+                            ${statusText}
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                photoBox.style.backgroundImage = 'none';
+                photoBox.innerHTML = '';
+            }
+        }
+
+        function preparePosting(n, c, a, id, x, y, phone) {
+            closeSearchModal();
+            
+            const form = document.getElementById('post-detail-modal');
+            form.style.display = 'flex';
+            
+            document.getElementById('h-name').value = n;
+            document.getElementById('h-cat').value = c.split('>').pop().trim();
+            document.getElementById('h-addr').value = a;
+            document.getElementById('h-id').value = id;
+            document.getElementById('h-x').value = x;
+            document.getElementById('h-y').value = y;
+            document.getElementById('h-phone').value = phone || '';
+            
+            document.getElementById('selected-info-text').innerHTML = `
+                <b style="font-size:20px; font-weight:900; color:var(--brand-primary);">${n}</b><br>
+                <span style="font-size:13px; color:var(--text-sub); font-weight:600; display:inline-block; margin-top:4px;">${a}</span>
+            `;
+
+            const photoBox = document.getElementById('selected-rest-photo');
+            const defaultBgUrl = getSmartRestImage(id, c, null);
+            photoBox.style.backgroundImage = `url('${defaultBgUrl}')`;
+            photoBox.innerHTML = '<div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.6); color:white; font-size:11px; font-weight:700; text-align:center; padding: 6px 0;">✨ AI Theme Image</div>'; 
+            
+            const photoUrl = `https://img1.kakaocdn.net/cthumb/local/R0x0/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flocalfiy%2Fsearch%2Fplace%2F${id}`;
+            let img = new Image();
+            
+            img.onload = function() { 
+                photoBox.style.backgroundImage = `url('${photoUrl}')`; 
+                photoBox.innerHTML = `
+                    <div style="position:absolute; bottom:0; width:100%; background:rgba(0,0,0,0.6); color:white; font-size:11px; font-weight:700; text-align:center; padding: 6px 0;">
+                        📍 Basic Location Image
+                    </div>
+                `;
+            };
+            img.src = photoUrl;
+
+            setTimeout(function() {
+                if (typeof kakao !== 'undefined' && kakao.maps) {
+                    const mapArea = document.getElementById('map-preview-area');
+                    mapArea.innerHTML = ''; 
+                    
+                    const loc = new kakao.maps.LatLng(Number(y), Number(x));
+                    
+                    if (!previewMap) {
+                        previewMap = new kakao.maps.Map(mapArea, { center: loc, level: 3 });
+                        previewMarker = new kakao.maps.Marker({ position: loc, map: previewMap });
+                    } else {
+                        previewMap.relayout();
+                        previewMap.setCenter(loc);
+                        previewMarker.setPosition(loc);
+                    }
+                    
+                    setTimeout(function() { 
+                        previewMap.relayout(); 
+                        previewMap.setCenter(loc); 
+                    }, 200);
+                }
+            }, 300); 
+        }
+
+        function cancelPosting() { 
+            document.getElementById('post-detail-modal').style.display = 'none'; 
+            document.getElementById('post-image').value = '';
+            document.getElementById('post-comment').value = '';
+        }
+
+        async function executeAddRestaurant() {
+            const user = localStorage.getItem('currentUser');
+            const fd = new FormData();
+            
+            fd.append('name', document.getElementById('h-name').value);
+            fd.append('category', document.getElementById('h-cat').value);
+            fd.append('address', document.getElementById('h-addr').value);
+            fd.append('kakao_id', document.getElementById('h-id').value);
+            fd.append('x', document.getElementById('h-x').value);
+            fd.append('y', document.getElementById('h-y').value);
+            
+            const comment = document.getElementById('post-comment').value;
+            if (!comment) { 
+                alert("미식평을 작성해주세요."); 
+                return; 
+            }
+            fd.append('comment', comment);
+            
+            const files = document.getElementById('post-image').files;
+            if (files && files.length > 0) { 
+                for(let i=0; i<files.length; i++) {
+                    fd.append('images', files[i]); 
+                }
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/restaurants`, { 
+                    method: 'POST', 
+                    headers: { 'user-id': encodeURI(user) }, 
+                    body: fd 
+                });
+                
+                if (res.ok) { 
+                    alert("성공적으로 등록되었습니다! 📝"); 
+                    cancelPosting(); 
+                    fetchGuideView(user); 
+                } else { 
+                    const errText = await res.text();
+                    alert(`🚨 서버 저장 실패! (코드: ${res.status})\n이유: ${errText}`); 
+                }
+            } catch(e) { 
+                alert(`🚨 네트워크 통신 에러 발생!\n${e.message}\n(터미널 서버 로그를 확인해주세요)`); 
+            }
+        }
+
+        async function executeDeleteRestaurant() {
+            if (!confirm("이 맛집 기록을 정말 삭제하시겠습니까?\n한 번 삭제하면 복구할 수 없습니다.")) {
+                return;
+            }
+
+            const user = localStorage.getItem('currentUser');
+            const restaurantId = currentOpenRestId; 
+
+            if (!restaurantId) {
+                alert("삭제할 식당 정보를 찾을 수 없습니다.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/restaurants/${restaurantId}`, {
+                    method: 'DELETE',
+                    headers: { 'user-id': encodeURI(user) }
+                });
+
+                if (res.ok) {
+                    alert("기록이 성공적으로 삭제되었습니다.");
+                    closeRestDetail(); 
+                    fetchGuideView(user); 
+                } else {
+                    const errText = await res.text();
+                    alert(`🚨 삭제 실패: ${errText}`);
+                }
+            } catch (error) {
+                alert(`🚨 네트워크 오류로 삭제하지 못했습니다: ${error.message}`);
+            }
+        }
+
+        // =========================================================
+        // [12] 식당 상세 정보 모달 제어
+        // =========================================================
+        function openRestDetail(name, category, address, comment, tier, kakao_id, img_url, owner, db_id, showGuestbook = false) {
+            document.getElementById('restaurant-detail-modal').style.display = 'flex';
+            const user = localStorage.getItem('currentUser');
+            
+            currentOpenRestId = db_id; 
+            
+            const detailImgEl = document.getElementById('detail-img');
+            const finalImg = getSmartRestImage(kakao_id, category, img_url);
+            
+            const oldSlider = detailImgEl.querySelector('.multi-image-slider');
+            if (oldSlider) {
+                oldSlider.remove();
+            }
+            
+            const oldIndicator = detailImgEl.querySelector('.image-indicator');
+            if (oldIndicator) {
+                oldIndicator.remove();
+            }
+            
+            detailImgEl.style.backgroundImage = `url('${finalImg}')`;
+            
+            const deleteBtn = document.getElementById('delete-rest-btn');
+            if (owner === user && db_id && db_id !== 'undefined') {
+                deleteBtn.style.display = 'block';
+            } else {
+                deleteBtn.style.display = 'none';
+            }
+
+            const aiBtn = document.getElementById('ai-sync-btn');
+            if (owner === user && db_id && db_id !== 'undefined') {
+                aiBtn.style.display = 'block';
+                aiBtn.onclick = function(e) { 
+                    e.stopPropagation(); 
+                    openAIPicker(db_id, name); 
+                };
+            } else { 
+                aiBtn.style.display = 'none'; 
+            }
+
+            document.getElementById('detail-name').innerText = name;
+            document.getElementById('detail-category').innerText = category.split('>').pop().trim();
+            document.getElementById('detail-address').innerText = `📍 ${address.split(' ')[0]} ${address.split(' ')[1] || ''}`;
+            document.getElementById('detail-comment').innerText = comment && comment !== "undefined" ? `"${comment}"` : "등록된 미식평이 없습니다.";
+            document.getElementById('detail-tier').innerText = tier ? `⭐️ ${tier.split(' ')[0]}` : "New Entry";
+            
+            const ownerBtn = document.getElementById('detail-owner');
+            ownerBtn.innerText = `✍️ ${owner}`;
+            ownerBtn.onclick = function() { 
+                closeRestDetail(); 
+                fetchGuideView(owner, true); 
+            };
+
+            const followBtn = document.getElementById('detail-follow-btn');
+            if (owner === user || !owner || owner === 'undefined') {
+                followBtn.style.display = 'none';
+            } else {
+                followBtn.style.display = 'inline-block';
+                const isFollowing = followingList.includes(owner);
+                
+                followBtn.innerText = isFollowing ? (currentLang === 'ko' ? '✓ 팔로잉' : '✓ Following') : (currentLang === 'ko' ? '+ 팔로우' : '+ Follow');
+                
+                followBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    executeToggleFollow(owner, false).then(function() {
+                        const updated = followingList.includes(owner);
+                        followBtn.innerText = updated ? (currentLang === 'ko' ? '✓ 팔로잉' : '✓ Following') : (currentLang === 'ko' ? '+ 팔로우' : '+ Follow');
+                    });
+                };
+            }
+            
+            document.getElementById('detail-phone').style.display = 'none';
+            document.getElementById('detail-map-area').innerHTML = `
+                <div style="text-align:center; padding:100px 0; color:var(--text-sub); font-size:13px; font-weight:600;">
+                    지도를 불러오는 중입니다...
+                </div>
+            `;
+
+            const existingAgg = document.querySelector('.aggregated-reviews');
+            if (existingAgg) existingAgg.remove();
+            
+            const existingComment = document.querySelector('.comment-area');
+            if (existingComment) existingComment.remove();
+
+            if (db_id && db_id !== 'undefined') {
+                fetch(`${API_URL}/feed`)
+                .then(function(r) { 
+                    return r.json(); 
+                })
+                .then(function(res) {
+                    const dataList = Array.isArray(res) ? res : (res.data || []);
+                    const targetData = dataList.find(function(item) { 
+                        return item.id === db_id; 
+                    });
+                    
+                    if (targetData && targetData.image_urls && targetData.image_urls.length > 1) {
+                        let sliderHtml = `<div class="multi-image-slider">`;
+                        
+                        let indicatorHtml = `
+                            <div class="image-indicator" style="position:absolute; top:12px; left:12px; background:rgba(0,0,0,0.8); color:var(--brand-yellow); padding:6px 14px; border-radius:12px; font-size:11px; font-weight:800; z-index:15; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+                                📸 다중 사진 (${targetData.image_urls.length}장)
+                            </div>
+                        `;
+
+                        targetData.image_urls.forEach(function(u) {
+                            sliderHtml += `<img src="${u}" class="multi-image-slide">`;
+                        });
+                        sliderHtml += `</div>`;
+                        
+                        detailImgEl.style.backgroundImage = 'none';
+                        detailImgEl.insertAdjacentHTML('afterbegin', indicatorHtml + sliderHtml);
+                    }
+                    
+                    const samePlaces = dataList.filter(function(item) {
+                        return item.kakao_id === kakao_id && item.comment && item.comment.trim() !== '';
+                    });
+
+                    let reviewHtml = '';
+                    if (samePlaces.length > 0) {
+                        samePlaces.forEach(function(p) {
+                            reviewHtml += `
+                            <div style="padding: 16px 0; border-bottom: 1px dashed var(--border-color);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                    <div style="font-weight:800; font-size:13px; color:var(--brand-primary); cursor:pointer;" onclick="closeRestDetail(); fetchGuideView('${p.owner}', true)">
+                                        🧑‍🍳 ${p.owner}
+                                    </div>
+                                    ${p.tier ? `<span class="s-badge" style="position:static; font-size:9px; padding:4px 8px;">${p.tier.split(' ')[0]}</span>` : ''}
+                                </div>
+                                <div style="color:var(--text-main); font-size: 14px; line-height:1.6; font-weight:500;">
+                                    "${p.comment}"
+                                </div>
+                            </div>`;
+                        });
+                    } else {
+                        reviewHtml = `
+                            <div style="color:var(--text-sub); font-size:12px; text-align:center; padding: 20px 0; font-weight:500;">
+                                아직 다른 미식가들의 평가가 없습니다.
+                            </div>
+                        `;
+                    }
+
+                    const aggregatedHtml = `
+                        <div class="aggregated-reviews" style="padding: 24px; background:var(--bg-main); border-radius:16px; margin-bottom:24px;">
+                            <div style="font-size:12px; font-weight:800; margin-bottom:16px; color:var(--brand-primary); text-transform:uppercase; letter-spacing:0.5px;">
+                                💡 이 식당에 대한 다른 미식가들의 한줄평
+                            </div>
+                            <div style="max-height:200px; overflow-y:auto; padding-right:8px;">
+                                ${reviewHtml}
+                            </div>
+                        </div>
+                    `;
+
+                    let guestbookHtml = '';
+                    if (targetData && showGuestbook) {
+                        guestbookHtml = `
+                            <div class="comment-area" style="background:var(--bg-main); border-radius:16px; padding:20px; margin-bottom:30px;">
+                                <div style="font-size:12px; font-weight:800; margin-bottom:16px; color:var(--brand-primary); text-transform:uppercase;">
+                                    💬 ${owner}님의 기록에 방명록 남기기
+                                </div>
+                                <div id="comment-list-${db_id}" class="comment-list"></div>
+                                <div class="comment-input-row" style="display:flex; gap:10px; margin-top:10px;">
+                                    <input type="text" id="comment-input-${db_id}" class="comment-input input-field" placeholder="방명록을 남겨보세요..." style="flex:1; margin:0;">
+                                    <button class="comment-btn btn-primary" onclick="submitComment('${db_id}')" style="width:auto; padding:12px 24px;">게시</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    document.getElementById('detail-map-area').insertAdjacentHTML('beforebegin', aggregatedHtml + guestbookHtml);
+                    
+                    if (targetData && showGuestbook) {
+                        renderComments(db_id, targetData.comments || []);
+                    }
+                });
+            }
+            
+            fetch(`${API_URL}/search/kakao?query=${encodeURIComponent(name)}`)
+                .then(function(res) { 
+                    return res.json(); 
+                })
+                .then(function(d) {
+                    const place = d.documents.find(function(doc) { 
+                        return doc.id === kakao_id; 
+                    }) || d.documents[0];
+                    
+                    if (place) {
+                        if (place.phone) {
+                            document.getElementById('detail-phone').innerText = `📞 ${place.phone}`;
+                            document.getElementById('detail-phone').style.display = 'inline-block';
+                        }
+                        
+                        document.getElementById('detail-kakao-btn').onclick = function() { 
+                            window.open(place.place_url, '_blank'); 
+                        };
+                        
+                        setTimeout(function() {
+                            if (typeof kakao !== 'undefined' && kakao.maps) {
+                                const mapArea = document.getElementById('detail-map-area');
+                                mapArea.innerHTML = ''; 
+                                
+                                const loc = new kakao.maps.LatLng(Number(place.y), Number(place.x));
+                                const map = new kakao.maps.Map(mapArea, { center: loc, level: 3 });
+                                const marker = new kakao.maps.Marker({ position: loc, map: map });
+                                
+                                setTimeout(function() { 
+                                    map.relayout(); 
+                                    map.setCenter(loc); 
+                                }, 200);
+                            }
+                        }, 300);
+                    }
+                })
+                .catch(function(e) {
+                    console.error("카카오 맵 세팅 중 에러 발생", e);
+                });
+        }
+
+        function closeRestDetail() { 
+            document.getElementById('restaurant-detail-modal').style.display = 'none'; 
+            currentOpenRestId = null; 
+        }
+
+        // =========================================================
+        // [13] 부가 기능 (AI 사진 교체, 알림, 댓글)
+        // =========================================================
+        async function openAIPicker(db_id, name) {
+            document.getElementById('ai-image-modal').style.display = 'flex';
+            const target = document.getElementById('ai-image-target');
+            
+            target.innerHTML = `
+                <div style="grid-column: span 2; text-align:center; padding: 60px 0; color:var(--brand-primary); font-size:14px; font-weight:800; line-height: 1.6;">
+                    서버에서 고화질 사진을 추출 중입니다...<br>잠시만 기다려주세요 ⏳
+                </div>
+            `;
+            
+            try {
+                const res = await fetch(`${API_URL}/restaurants/${db_id}/ai-images?name=${encodeURIComponent(name)}`);
+                const data = await res.json();
+                
+                if (data.images && data.images.length > 0) {
+                    let html = '';
+                    data.images.forEach(function(img) {
+                        html += `
+                            <img src="${img}" class="ai-image-item" onclick="selectAIImage('${db_id}', '${img}')" onerror="this.style.display='none'" style="width:100%; height:150px; object-fit:cover; border-radius:12px; cursor:pointer;">
+                        `;
+                    });
+                    target.innerHTML = html;
+                } else {
+                    target.innerHTML = `
+                        <div style="grid-column: span 2; text-align:center; padding: 40px 0; color:var(--text-sub); font-size:13px; font-weight: 600;">
+                            사진을 찾을 수 없습니다.
+                        </div>
+                    `;
+                }
+            } catch(error) {
+                console.error("AI 사진 추출 실패", error);
+            }
+        }
+
+        async function selectAIImage(db_id, img_url) {
+            if (!confirm("이 사진으로 식당의 대표 이미지를 교체하시겠습니까?")) {
+                return;
+            }
+            
+            const user = localStorage.getItem('currentUser');
+            try {
+                const res = await fetch(`${API_URL}/restaurants/${db_id}/image`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'user-id': user },
+                    body: JSON.stringify({ image_url: img_url })
+                });
+                
+                if (res.ok) {
+                    alert("대표 사진이 성공적으로 교체되었습니다! ✨");
+                    document.getElementById('ai-image-modal').style.display = 'none';
+                    document.getElementById('restaurant-detail-modal').style.display = 'none';
+                    fetchGuideView(user);
+                }
+            } catch(e) {
+                console.error("사진 교체 실패", e);
+            }
+        }
+
+        async function fetchNotifications() {
+            const user = localStorage.getItem('currentUser');
+            if (!user) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/notifications`, { 
+                    headers: { 'user-id': user } 
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    const badge = document.getElementById('noti-badge');
+                    if (data.unread_count > 0) {
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch(e) {
+                console.error("알림 확인 실패", e);
+            }
+        }
+
+        async function openNotificationModal() {
+            document.getElementById('notification-modal').style.display = 'flex';
+            const target = document.getElementById('notification-list-target');
+            const user = localStorage.getItem('currentUser');
+            
+            target.innerHTML = `
+                <div style="text-align:center; padding:60px 20px; color:var(--brand-primary); font-size:14px; font-weight:800;">
+                    알림을 불러오는 중입니다...
+                </div>
+            `;
+            
+            try {
+                const res = await fetch(`${API_URL}/notifications`, { 
+                    headers: { 'user-id': user } 
+                });
+                const data = await res.json();
+                
+                if (!data.notifications || data.notifications.length === 0) {
+                    target.innerHTML = `
+                        <div style="text-align:center; padding:60px 20px; color:var(--text-sub); font-size:13px; font-weight:600;">
+                            아직 도착한 소식이 없습니다.
+                        </div>
+                    `;
+                } else {
+                    let html = '';
+                    data.notifications.forEach(function(n) {
+                        const icon = n.type === 'follow' ? '🤝' : n.type === 'like' ? '❤️' : n.type === 'comment' ? '💬' : '🔔';
+                        html += `
+                            <div class="noti-item ${n.read ? '' : 'unread'}" style="padding:20px; border-bottom:1px solid var(--border-color); display:flex; gap:16px; align-items:center; background:${n.read ? 'transparent' : 'rgba(255, 90, 32, 0.05)'};">
+                                <div class="noti-icon" style="width:48px; height:48px; border-radius:50%; background:var(--bg-card); color:var(--brand-primary); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; border: 1px solid var(--border-color);">
+                                    ${icon}
+                                </div>
+                                <div style="flex:1; font-size:14px; color:var(--text-main); line-height:1.5; font-weight:600;">
+                                    ${n.message}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    target.innerHTML = html;
+                }
+                
+                fetch(`${API_URL}/notifications/read`, { 
+                    method: 'PUT', 
+                    headers: { 'user-id': user } 
+                });
+                
+                document.getElementById('noti-badge').style.display = 'none';
+                
+            } catch(e) {
+                console.error("알림 모달 에러", e);
+            }
+        }
+
+        function closeNotificationModal() {
+            document.getElementById('notification-modal').style.display = 'none';
+        }
+
+        async function executeBookmark(restaurant_id) {
+            const user = localStorage.getItem('currentUser');
+            try {
+                const res = await fetch(`${API_URL}/restaurants/bookmark/${restaurant_id}`, { 
+                    method: 'POST', 
+                    headers: { 'user-id': user } 
+                });
+                const data = await res.json();
+                alert(data.message || "위시리스트에 담았습니다!");
+            } catch(e) {
+                console.error("북마크 실패", e);
+            }
+        }
+
+        async function executeLike(restaurant_id) {
+            const user = localStorage.getItem('currentUser');
+            try {
+                const res = await fetch(`${API_URL}/restaurants/${restaurant_id}/like`, { 
+                    method: 'POST', 
+                    headers: { 'user-id': user } 
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    
+                    const countEl = document.getElementById(`like-count-${restaurant_id}`);
+                    if (countEl) {
+                        countEl.innerText = data.likes_count;
+                    }
+                    
+                    const btn = document.getElementById(`like-btn-${restaurant_id}`);
+                    if (btn) {
+                        const svg = btn.querySelector('svg');
+                        if (data.liked) {
+                            btn.classList.add('liked'); 
+                            svg.style.fill = 'var(--brand-fab)';
+                            svg.style.stroke = 'var(--brand-fab)';
+                        } else {
+                            btn.classList.remove('liked'); 
+                            svg.style.fill = 'none';
+                            svg.style.stroke = 'var(--text-sub)';
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error("좋아요 처리 실패", e);
+            }
+        }
+
+        function recommendAIComment() {
+            const name = document.getElementById('h-name').value || "이 곳";
+            const cat = document.getElementById('h-cat').value || "";
+            
+            const comments = {
+                "고기": [`입안 가득 퍼지는 육즙이 예술인 ${name}!`, `고기 퀄리티가 남다른 ${name}, 강력 추천합니다.`, `회식이나 모임 장소로 손색없는 ${name}입니다.`],
+                "카페": [`분위기 맛집 ${name}, 커피 향이 너무 좋아요.`, `디저트와 커피의 완벽한 조화, ${name}에서 힐링하고 갑니다.`, `인테리어가 예뻐서 사진 찍기 좋은 ${name}!`],
+                "일식": [`신선한 재료가 돋보이는 ${name}, 훌륭한 식사였습니다.`, `정갈하고 깔끔한 맛, ${name}에서의 한 끼는 최고네요.`, `입에서 살살 녹는 맛, ${name} 재방문 의사 100%입니다.`],
+                "중식": [`불맛이 살아있는 ${name}, 자꾸 생각나는 맛입니다.`, `스트레스 풀리는 매콤함! ${name} 추천해요.`, `기본기가 탄탄한 중식당, ${name}입니다.`],
+                "양식": [`고급스러운 분위기와 완벽한 플레이팅, ${name} 최고!`, `데이트 코스로 딱 좋은 ${name}, 와인과 찰떡궁합입니다.`, `파스타 소스가 정말 꾸덕하고 맛있는 ${name}!`],
+                "default": [`${name}, 기대 이상으로 너무 훌륭한 미식 경험이었습니다.`, `분위기, 맛, 서비스 모두 만족스러운 ${name}!`, `숨겨진 보석 같은 ${name}, 나만 알고 싶은 맛집이네요.`]
+            };
+
+            let selectedCategory = "default";
+            if (cat.includes("고기") || cat.includes("돼지") || cat.includes("소") || cat.includes("구이")) {
+                selectedCategory = "고기";
+            } else if (cat.includes("카페") || cat.includes("커피") || cat.includes("디저트")) {
+                selectedCategory = "카페";
+            } else if (cat.includes("일식") || cat.includes("초밥") || cat.includes("스시")) {
+                selectedCategory = "일식";
+            } else if (cat.includes("중식") || cat.includes("마라") || cat.includes("짜장")) {
+                selectedCategory = "중식";
+            } else if (cat.includes("양식") || cat.includes("파스타") || cat.includes("피자")) {
+                selectedCategory = "양식";
+            }
+
+            const list = comments[selectedCategory];
+            const randomComment = list[Math.floor(Math.random() * list.length)];
+            
+            document.getElementById('post-comment').value = randomComment;
+        }
+
+        async function submitComment(restaurant_id) {
+            const user = localStorage.getItem('currentUser');
+            const input = document.getElementById(`comment-input-${restaurant_id}`);
+            const text = input.value.trim();
+            
+            if (!text) {
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/restaurants/${restaurant_id}/comment`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'user-id': user },
+                    body: JSON.stringify({ text: text })
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    input.value = '';
+                    renderComments(restaurant_id, data.comments);
+                }
+            } catch(e) {
+                console.error("댓글 전송 실패", e);
+            }
+        }
+
+        function renderComments(restaurant_id, comments) {
+            const listEl = document.getElementById(`comment-list-${restaurant_id}`);
+            if (!listEl) return;
+            
+            if (!comments || comments.length === 0) {
+                listEl.innerHTML = `
+                    <div style="color:var(--text-sub); font-size:12px; text-align:center; padding: 20px 0; font-weight:500;">
+                        ${currentLang === 'ko' ? '첫 방명록을 남겨보세요.' : 'Leave the first comment.'}
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            comments.forEach(function(c) {
+                html += `
+                    <div class="comment-item" style="margin-bottom: 12px; font-size: 14px; line-height: 1.5;">
+                        <b style="color:var(--brand-primary); font-weight:800; margin-right: 6px;">${c.user}</b> 
+                        <span style="color:var(--text-main); font-weight:500;">${c.text}</span>
+                    </div>
+                `;
+            });
+            
+            listEl.innerHTML = html;
+            listEl.scrollTop = listEl.scrollHeight;
+        }
+
+        // =========================================================
+        // [14] 로그인 및 앱 라이프사이클 관리
+        // =========================================================
+        async function handleLogin() {
+            const u = document.getElementById('login-user').value;
+            const p = document.getElementById('login-pass').value;
+            
+            if (!u || !p) {
+                alert(currentLang === 'ko' ? "정보를 정확히 입력하세요." : "Please enter details.");
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/login`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ username: u, password: p }) 
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) { 
+                    localStorage.setItem('currentUser', data.username); 
+                    followingList = data.following || []; 
+                    
+                    document.getElementById('login-section').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                    initApp(); 
+                } else { 
+                    alert(data.detail || "로그인에 실패했습니다."); 
+                }
+            } catch(e) { 
+                alert("서버 연결에 실패했습니다. 백엔드가 실행 중인지 확인해주세요."); 
+            }
+        }
+
+        async function handleSignup() {
+            const u = document.getElementById('login-user').value; 
+            const p = document.getElementById('login-pass').value;
+            
+            if (!u || !p) {
+                alert("가입할 아이디와 비밀번호를 입력하세요.");
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_URL}/signup`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ username: u, password: p }) 
+                });
+                
+                const responseData = await res.json();
+                alert(responseData.message);
+            } catch (e) {
+                alert("회원가입 통신 중 에러가 발생했습니다.");
+            }
+        }
+
+        function handleLogout() { 
+            localStorage.removeItem('currentUser'); 
+            location.reload(); 
+        }
+
+        function initApp() { 
+            const user = localStorage.getItem('currentUser'); 
+            if (user) { 
+                document.getElementById('login-section').style.display = 'none'; 
+                document.getElementById('main-content').style.display = 'block'; 
+                switchTab('home'); 
+                fetchNotifications(); 
+            } else {
+                document.getElementById('login-section').style.display = 'flex';
+                document.getElementById('main-content').style.display = 'none';
+            }
+        }
+
+        function openEditProfileModal() {
+            document.getElementById('edit-nickname-input').value = document.getElementById('display-profile-name').innerText;
+            document.getElementById('edit-philosophy-input').value = currentProfilePhilosophy;
+            document.getElementById('edit-dna-input').value = currentProfileTags.join(', ');
+            document.getElementById('edit-personal-info').value = currentProfilePersonalInfo;
+            
+            document.getElementById('edit-profile-modal').style.display = 'flex';
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('edit-profile-modal').style.display = 'none';
+        }
+
+        function submitProfileEdit() {
+            const newName = document.getElementById('edit-nickname-input').value.trim();
+            
+            if (!newName) {
+                alert(currentLang === 'ko' ? "변경할 닉네임을 입력해주세요." : "Please enter a name.");
+                return;
+            }
+            
+            const rawTags = document.getElementById('edit-dna-input').value.split(',');
+            const tagsArray = rawTags.map(function(t) { 
+                return t.trim(); 
+            }).filter(function(t) { 
+                return t !== ""; 
+            });
+            
+            document.getElementById('display-profile-name').innerText = newName;
+            
+            fetch(`${API_URL}/user/update-profile`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'user-id': localStorage.getItem('currentUser') 
+                },
+                body: JSON.stringify({ 
+                    nickname: newName, 
+                    personal_info: document.getElementById('edit-personal-info').value,
+                    philosophy: document.getElementById('edit-philosophy-input').value.trim(),
+                    taste_tags: tagsArray
+                })
+            }).then(function(res) {
+                if(res.ok) {
+                    alert(currentLang === 'ko' ? "프로필 정보가 성공적으로 업데이트되었습니다! ✨" : "Profile successfully updated! ✨");
+                    closeEditProfileModal();
+                    fetchGuideView(localStorage.getItem('currentUser')); 
+                } else {
+                    alert("프로필 수정 중 오류가 발생했습니다.");
+                }
+            }).catch(function(e) {
+                console.error("프로필 수정 에러", e);
+            });
+        }
+
+        // =========================================================
+        // [15] 최적화된 온로드 초기화
+        // =========================================================
+        window.onload = function() { 
+            if (typeof kakao !== 'undefined' && kakao.maps) {
+                kakao.maps.load(function() {
+                    console.log("Kakao Map Engine Ready");
+                }); 
+            } else {
+                console.warn("카카오맵 API 스크립트가 아직 로드되지 않았거나 키가 유효하지 않습니다.");
+            }
+            
+            const splash = document.getElementById('splash-screen');
+            setTimeout(function() {
+                fetchUserProfiles(); 
+                
+                if (splash) { 
+                    splash.style.transform = 'scale(1.05)';
+                    splash.style.opacity = '0'; 
+                    setTimeout(function() { 
+                        splash.style.display = 'none'; 
+                        initApp(); 
+                    }, 600); 
+                } else { 
+                    initApp(); 
+                }
+            }, 1800); 
+        };
+    </script>
+</body>
+</html>

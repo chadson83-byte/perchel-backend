@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+bcrypt
+python-multipart
+requests
+python-jose

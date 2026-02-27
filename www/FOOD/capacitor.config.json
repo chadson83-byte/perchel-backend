@@ -1,0 +1,15 @@
+{
+  "appId": "com.chadson83.perchel",
+  "appName": "Perchel",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "plugins": {
+    "CapacitorCookies": {
+      "enabled": true
+    }
+  },
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": ["perchel-backend.onrender.com"]
+  }
+}

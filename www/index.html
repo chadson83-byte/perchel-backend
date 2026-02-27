@@ -51,7 +51,6 @@
             퍼슐 입장
         </h1>
         <div style="width: 100%; max-width: 320px;">
-            
             <div class="social-login-container" style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
                 
                 <button class="btn-google" onclick="triggerGoogleLogin()" style="width: 100%; height: 52px; background: #FFFFFF; color: #3c4043; border: 1px solid #dadce0; border-radius: 12px; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
@@ -70,19 +69,27 @@
                     </svg>
                     <span data-ko="카카오 로그인 (점검 중)" data-en="Kakao Login (Maintenance)">카카오 로그인 (점검 중)</span>
                 </button>
-                
-                <div style="display: none;">
-                    <div id="g_id_onload"
-                         data-client_id="725138598590-gjhd8dduh3ag3922il5pcrf15q1rjvvn.apps.googleusercontent.com"
-                         data-context="signin"
-                         data-ux_mode="popup"
-                         data-callback="handleGoogleLogin"
-                         data-auto_prompt="false">
-                    </div>
-                </div>
+
             </div>
         </div>
     </div>
+
+                <button class="btn-kakao" onclick="alert('현재 카카오 로그인 서비스 장애로 점검 중입니다. 상단의 구글 로그인을 이용해주세요.')" style="width: 100%; height: 52px; background: #F4F4F4; color: #999999; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; cursor: not-allowed;">
+                    <svg viewBox="0 0 24 24" width="20" height="20" style="margin-right: 8px; fill: #999999;">
+                        <path d="M12 3c-5.523 0-10 3.535-10 7.896 0 2.825 1.83 5.3 4.632 6.703-.306 1.135-1.11 4.148-1.14 4.31-.035.195.14.19.223.136.068-.044 3.593-2.457 5.044-3.486.41.037.828.058 1.25.058 5.523 0 10-3.535 10-7.896C22 6.535 17.523 3 12 3z"/>
+                    </svg>
+                    <span data-ko="카카오 로그인 (점검 중)" data-en="Kakao Login (Maintenance)">카카오 로그인 (점검 중)</span>
+                </button>
+
+                <div style="display:flex; align-items:center; margin: 10px 0; color:var(--text-sub); font-size:12px;">
+                    <div style="flex:1; height:1px; background:var(--border-color);"></div>
+                    <span style="padding: 0 10px;">또는</span>
+                    <div style="flex:1; height:1px; background:var(--border-color);"></div>
+                </div>
+                <input type="text" id="login-user" class="input-field" placeholder="아이디">
+                <input type="password" id="login-pass" class="input-field" placeholder="비밀번호">
+                <button class="btn-primary" onclick="handleLogin()">이메일로 시작하기</button>
+            </div>
 
     <div id="main-content">
         <header class="top-bar transparent" id="main-top-bar">
