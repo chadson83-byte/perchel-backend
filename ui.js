@@ -287,3 +287,30 @@ if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.A
         }
     });
 }
+
+  /* =========================================================
+   [CTO 추가] 폰 카메라 촬영 즉시 미리보기 (썸네일) 띄우기
+========================================================= */
+let capturedImageFile = null; // 나중에 '등록' 버튼 누를 때 서버로 보낼 사진 파일 보관소
+
+function previewCapturedImage(event) {
+    const file = event.target.files[0]; // 유저가 찍은 사진을 가져옴
+    
+    if (file) {
+        capturedImageFile = file; // 서버 업로드를 위해 변수에 저장해둠
+        
+        // 사진을 읽어서 화면에 뿌려주는 자바스크립트 기본 도구
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const previewImg = document.getElementById('image-preview');
+            previewImg.src = e.target.result; // 찍은 사진 데이터를 img 태그에 삽입
+            previewImg.style.display = 'block'; // 숨겨놨던 img 태그를 짠! 하고 보여줌
+            
+            // 프리미엄 토스트 알림 띄우기 (이전에 만든 함수 재활용)
+            if(typeof showPremiumToast === "function") {
+                showPremiumToast("멋진 사진이네요! 대표 사진으로 설정되었습니다.", "📸");
+            }
+        }
+        reader.readAsDataURL(file); // 파일 읽기 시작
+    }
+}
