@@ -475,6 +475,18 @@
         </div>
     </div>
 
+    <div id="tier-list-modal" class="bottom-modal" style="z-index: 2600;">
+        <div class="modal-body" style="height: 85vh; padding: 0; background: var(--bg-main) !important;">
+            <div style="padding: 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; position: sticky; top: 0; background: rgba(18,18,18,0.95); backdrop-filter: blur(10px); z-index: 10;">
+                <h2 style="font-weight: 900; font-size: 18px; color: #EFE9D9;">🏆 나의 미식 서열표</h2>
+                <div onclick="document.getElementById('tier-list-modal').style.display='none'" style="cursor: pointer;">
+                    <svg viewBox="0 0 24 24" style="width: 24px; height: 24px; stroke: #A09D96; fill: none; stroke-width: 2;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </div>
+            </div>
+            <div id="tier-list-content" style="padding: 24px; overflow-y: auto; padding-bottom: 100px;"></div>
+        </div>
+    </div>
+
     <script src="config.js?v=2"></script>
     <script src="auth.js?v=2"></script>
     <script src="map.js?v=2"></script>
@@ -546,5 +558,45 @@
             }
         }
     </script>
+    <script>
+// =========================================================
+// [CTO 철벽 방어] 스마트폰 하드웨어 뒤로가기 = 메인 화면 이동 로직
+// =========================================================
+// 1. 앱 실행 시 미래의 상태(history)를 하나 억지로 만들어 둡니다.
+window.history.pushState({ noBackExitsApp: true }, '');
+
+window.addEventListener('popstate', function(event) {
+    let modalClosed = false;
+    
+    // 1순위: 화면에 열려있는 팝업/모달이 있다면 전부 찾아서 닫습니다.
+    const modals = document.querySelectorAll('.bottom-modal, .modal-overlay');
+    modals.forEach(m => {
+        if (window.getComputedStyle(m).display !== 'none') {
+            m.style.display = 'none';
+            modalClosed = true;
+        }
+    });
+
+    // 방금 모달을 닫았다면, 다음 뒤로가기 때 앱이 꺼지지 않도록 다시 총알(상태)을 장전합니다.
+    if (modalClosed) {
+        window.history.pushState({ noBackExitsApp: true }, '');
+        return; 
+    }
+
+    // 2순위: 열린 모달이 없다면, 현재 활성화된 탭이 '홈(Home)'인지 확인합니다.
+    const activeNav = document.querySelector('.nav-item.active');
+    if (activeNav && activeNav.id !== 'm-home') {
+        // 홈 탭이 아니라면 홈으로 강제 이동시킵니다.
+        if (typeof switchTab === 'function') switchTab('home');
+        
+        // 홈으로 이동했으니 다시 앱 종료 방지 총알을 장전합니다.
+        window.history.pushState({ noBackExitsApp: true }, '');
+        return;
+    }
+
+    // 3순위: 홈 탭에 있고, 열려있는 팝업도 없다면
+    // 이때는 유저가 정말 앱을 끄고 싶어 하는 것이므로 추가 장전을 하지 않아 자연스럽게 앱이 종료됩니다.
+});
+</script>
 </body>
 </html>

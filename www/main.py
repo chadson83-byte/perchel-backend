@@ -28,7 +28,7 @@ app.add_middleware(
 os.makedirs("images", exist_ok=True)
 app.mount("/images", StaticFiles(directory="images"), name="images")
 
-# 🚨 MongoDB 연결 (이전에 복사하신 실제 주소로 <db_password>를 변경하여 넣으세요)
+# 🚨 MongoDB 연결
 MONGO_URI = "mongodb+srv://chadson83:ss11041104@cluster0.fjcxowk.mongodb.net/?appName=Cluster0"
 client = AsyncIOMotorClient(MONGO_URI)
 db = client["perchel_db"]
@@ -63,7 +63,7 @@ class ImageUpdateRequest(BaseModel):
     image_url: str
 
 # =========================================================
-# [4] 소셜 로그인 (MongoDB 연동)
+# [4] 소셜 로그인 (MongoDB 연동 및 구글 프사 동기화)
 # =========================================================
 @app.post("/login/social")
 async def social_login(req: SocialLoginRequest):
@@ -93,21 +93,32 @@ async def social_login(req: SocialLoginRequest):
     else:
         raise HTTPException(status_code=400, detail="지원하지 않는 소셜 로그인입니다.")
 
+    # 💡 CTO 핵심 패치: $set과 $setOnInsert를 분리하여 중복 방지 및 구글 프사 자동 연동!
+    await users_col.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {
+                "display_name": display_name,
+                "profile_image": profile_image, # 구글/카카오 프사 강제 동기화
+                "last_login": datetime.now().isoformat()
+            },
+            "$setOnInsert": {
+                "following": [], # 로그인 시 팔로우 목록 초기화 방지
+                "followers": 0,
+                "philosophy": "",
+                "taste_tags": [],
+                "personal_info": "",
+                "badges": ["뉴비 미식가 🌱"],
+                "level": "뉴비 미식가 🌱"
+            }
+        },
+        upsert=True
+    )
+    
+    print(f"[소셜가입/로그인 완료] 유저: {user_id}")
+
+    # 최신 유저 정보 다시 가져오기
     user = await users_col.find_one({"user_id": user_id})
-    if not user:
-        user = {
-            "user_id": user_id,
-            "following": [],
-            "followers": 0,
-            "display_name": display_name,
-            "profile_image": profile_image,
-            "philosophy": "",
-            "taste_tags": [],
-            "personal_info": "",
-            "badges": ["뉴비 미식가 🌱"]
-        }
-        await users_col.insert_one(user)
-        print(f"[소셜가입 완료] 새로운 유저 등록: {user_id}")
 
     return {
         "message": "로그인 성공", 
@@ -266,7 +277,7 @@ async def get_ranking(keyword: str = ""):
 # =========================================================
 @app.get("/feed")
 async def get_feed():
-    rests = await rests_col.find().sort("created_at", 1).to_list(None)
+    rests = await rests_col.find().sort("created_at", -1).to_list(None)
     for r in rests: r.pop("_id", None)
     return {"data": rests}
 
@@ -410,7 +421,6 @@ async def add_restaurant(
     # ---------------------------------------------------------
     rank_score = await get_user_rank(user_id)
     
-    # 이 식당(kakao_id)의 기존 마스터 정보 확인
     existing_rests = await rests_col.find({"kakao_id": kakao_id}).to_list(None)
     
     current_top_rank = 0
@@ -422,13 +432,11 @@ async def add_restaurant(
         current_top_photo = existing_rests[0].get("global_top_photo", "")
         current_top_user = existing_rests[0].get("global_top_user", "")
 
-    # 내 점수가 기존 멘토보다 높거나 같고, 새로운 사진을 올렸다면 왕좌 탈환!
     if rank_score >= current_top_rank and main_image:
         new_top_photo = main_image
         new_top_rank = rank_score
         new_top_user = user_id
         
-        # 기존에 등록된 이 식당의 모든 피드 썸네일을 내 사진으로 강제 일괄 교체
         await rests_col.update_many(
             {"kakao_id": kakao_id},
             {"$set": {
@@ -438,11 +446,9 @@ async def add_restaurant(
             }}
         )
     else:
-        # 내 랭크가 낮거나 사진이 없으면 기존 마스터 썸네일 유지
         new_top_photo = current_top_photo if current_top_photo else main_image
         new_top_rank = current_top_rank
         new_top_user = current_top_user
-    # ---------------------------------------------------------
 
     rest_data = {
         "id": str(uuid.uuid4()),
@@ -454,11 +460,11 @@ async def add_restaurant(
         "x": x, "y": y,
         "comment": comment,
         "tier": "", 
-        "image_url": main_image,          # 내 개인 피드용 원본
+        "image_url": main_image, 
         "image_urls": image_urls,
-        "global_top_photo": new_top_photo,# 💡 앱 전체 간판용 사진
-        "global_top_rank": new_top_rank,  # 💡 권력 방어용 점수
-        "global_top_user": new_top_user,  # 💡 썸네일 점유자 마크
+        "global_top_photo": new_top_photo,
+        "global_top_rank": new_top_rank,
+        "global_top_user": new_top_user,
         "likes": [],
         "comments": [],
         "created_at": datetime.now().isoformat()
@@ -466,6 +472,49 @@ async def add_restaurant(
 
     await rests_col.insert_one(rest_data)
     return {"message": "성공적으로 추가되었습니다.", "id": rest_data["id"]}
+
+
+# 💡 [CTO 추가] 등록된 식당 사진만 변경하는 API (옵션 C 완벽 적용)
+@app.post("/restaurants/{rest_id}/photo")
+async def update_restaurant_photo(rest_id: str, request: Request, image: UploadFile = File(...)):
+    user_id = request.headers.get('user-id')
+    if not user_id: 
+        raise HTTPException(status_code=401, detail="권한 없음")
+
+    file_extension = image.filename.split(".")[-1]
+    file_name = f"rest_{uuid.uuid4().hex[:12]}.{file_extension}"
+    file_path = os.path.join("images", file_name)
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(image.file, buffer)
+    new_image_url = f"/images/{file_name}"
+
+    rest = await rests_col.find_one({"id": rest_id})
+    if not rest: 
+        return {"error": "식당을 찾을 수 없습니다."}
+    
+    kakao_id = rest.get("kakao_id", "")
+    update_doc = {"image_url": new_image_url}
+
+    rank_score = await get_user_rank(user_id)
+    current_top_rank = rest.get("global_top_rank", 0)
+    
+    if rank_score >= current_top_rank:
+        update_doc["global_top_photo"] = new_image_url
+        update_doc["global_top_rank"] = rank_score
+        update_doc["global_top_user"] = user_id
+        
+        await rests_col.update_many(
+            {"kakao_id": kakao_id},
+            {"$set": {
+                "global_top_photo": new_image_url,
+                "global_top_rank": rank_score,
+                "global_top_user": user_id
+            }}
+        )
+
+    await rests_col.update_one({"id": rest_id}, {"$set": update_doc})
+    return {"message": "사진이 성공적으로 업데이트 되었습니다.", "url": new_image_url}
+
 
 @app.put("/restaurants/{rest_id}")
 async def update_tier(rest_id: str, req: TierUpdateRequest, request: Request):
@@ -506,7 +555,6 @@ async def add_notification(user_id, noti_type, message):
         "created_at": datetime.now().isoformat()
     }
     
-    # 해당 유저의 알림 도큐먼트가 없으면 생성하고, 있으면 맨 앞에 추가하되 50개 유지
     await notis_col.update_one(
         {"user_id": user_id},
         {"$push": {
@@ -519,27 +567,33 @@ async def add_notification(user_id, noti_type, message):
         upsert=True
     )
 
+# 💡 [CTO 핵심 패치] 팔로우 토글 시 DB에 완벽히 기록되도록 수정
 @app.post("/follow/{target_user}")
 async def toggle_follow(target_user: str, request: Request):
     user_id = request.headers.get('user-id')
-    if not user_id or user_id == target_user: raise HTTPException(status_code=400, detail="잘못된 요청입니다.")
+    
+    if not user_id or user_id == target_user:
+        raise HTTPException(status_code=400, detail="잘못된 요청입니다.")
 
-    target = await users_col.find_one({"user_id": target_user})
     me = await users_col.find_one({"user_id": user_id})
-    if not target or not me: raise HTTPException(status_code=404, detail="대상을 찾을 수 없습니다.")
-
+    if not me:
+        raise HTTPException(status_code=404, detail="유저 정보를 찾을 수 없습니다.")
+        
     following_list = me.get("following", [])
+
     if target_user in following_list:
-        following_list.remove(target_user)
+        # 언팔로우 로직
+        await users_col.update_one({"user_id": user_id}, {"$pull": {"following": target_user}})
         await users_col.update_one({"user_id": target_user}, {"$inc": {"followers": -1}})
     else:
-        following_list.append(target_user)
+        # 팔로우 로직
+        await users_col.update_one({"user_id": user_id}, {"$addToSet": {"following": target_user}})
         await users_col.update_one({"user_id": target_user}, {"$inc": {"followers": 1}})
-        await users_col.update_one({"user_id": user_id}, {"$addToSet": {"badges": f"{target_user}님의 팬"}})
         await add_notification(target_user, "follow", f"🤝 {user_id}님이 회원님을 팔로우합니다.")
 
-    await users_col.update_one({"user_id": user_id}, {"$set": {"following": following_list}})
-    return {"following": following_list}
+    # 최신 팔로우 리스트 가져와서 반환
+    updated_me = await users_col.find_one({"user_id": user_id})
+    return {"message": "success", "following": updated_me.get("following", [])}
 
 @app.post("/restaurants/bookmark/{rest_id}")
 async def bookmark_restaurant(rest_id: str, request: Request):
@@ -617,4 +671,3 @@ async def read_notifications(request: Request):
         await notis_col.update_one({"user_id": user_id}, {"$set": {"notifications": notis}})
         
     return {"message": "알림 읽음 처리 완료"}
-

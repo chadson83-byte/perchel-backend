@@ -314,3 +314,59 @@ function previewCapturedImage(event) {
         reader.readAsDataURL(file); // 파일 읽기 시작
     }
 }
+
+// =========================================================
+// [CTO 긴급 패치] 지도 영역 내 스와이프 시 탭 넘어가는 현상 완벽 방어
+// =========================================================
+// 💡 앱이 켜지고 1초 뒤에 지도 영역을 찾아 방어막을 전개합니다.
+setTimeout(() => {
+    // 카카오맵이 그려지는 컨테이너의 ID를 가져옵니다. (보통 'map' 입니다)
+    const mapElement = document.getElementById('map'); 
+    
+    if (mapElement) {
+        // e.stopPropagation() : "내가 여기서 터치 처리했으니까, 부모 창(탭 스와이프)한테는 터치했다고 일러바치지 마!" 라는 뜻입니다.
+        mapElement.addEventListener('touchstart', function(e) { 
+            e.stopPropagation(); 
+        }, { passive: true });
+        
+        mapElement.addEventListener('touchmove', function(e) { 
+            e.stopPropagation(); 
+        }, { passive: true });
+        
+        mapElement.addEventListener('touchend', function(e) { 
+            e.stopPropagation(); 
+        }, { passive: true });
+        
+        console.log("🛡️ 지도 스와이프 방어막 전개 완료!");
+    }
+}, 1000);
+
+// =========================================================
+// [CTO 긴급 패치] 탐색 탭 진입 시 '실시간 미식 피드' 기본화면 강제 설정
+// =========================================================
+if (typeof window.switchTab === 'function') {
+    const _originalSwitchTabForFeed = window.switchTab;
+    
+    // 기존 탭 이동 함수를 잠시 가로챕니다.
+    window.switchTab = function(tabId, pushHistory) {
+        // 1. 원래 하던 대로 탭 이동을 정상적으로 수행합니다.
+        _originalSwitchTabForFeed(tabId, pushHistory);
+        
+        // 2. 만약 이동한 탭이 '탐색(network)' 탭이라면?
+        if (tabId === 'network' || tabId === 'explore') {
+            setTimeout(() => {
+                // 화면 안의 '실시간 미식 피드' 버튼을 찾아 빛의 속도로 클릭합니다!
+                const elements = Array.from(document.querySelectorAll('*'));
+                const feedBtn = elements.find(el => 
+                    el.innerText && 
+                    el.innerText.trim() === '실시간 미식 피드' && 
+                    (el.tagName === 'BUTTON' || el.tagName === 'DIV')
+                );
+                
+                if (feedBtn) {
+                    feedBtn.click();
+                }
+            }, 10); // 탭이 열리자마자 0.01초 만에 실행
+        }
+    };
+}

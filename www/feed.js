@@ -22,6 +22,8 @@ async function fetchHomeData() {
             if (titleEl) titleEl.innerText = currentLang === 'ko' ? `${globalRegion}지역 추천 미식가` : `Top in ${globalRegion}`;
         }
 
+        displayEditors = [...new Map(displayEditors.map(item => [item.username, item])).values()];
+
         if (displayEditors.length === 0) {
             document.getElementById('editor-list-container').innerHTML = `<div style="padding:20px; color:var(--text-sub); font-size:13px; text-align:center; width:100%;">${currentLang === 'ko' ? '이 지역에 활동하는 미식가가 없습니다.' : 'No gourmets in this region yet.'}</div>`;
         } else {
@@ -126,6 +128,7 @@ async function fetchNetworkData() {
         document.getElementById('following-list-container').innerHTML = followingHtml;
 
         let recommendedSet = new Set();
+        recommended = [...new Map(recommended.map(item => [item.username, item])).values()];
         followingList.forEach(followedUser => {
             const fUserObj = (d.all_editors || []).find(e => e.username === followedUser);
             if (fUserObj && fUserObj.following) fUserObj.following.forEach(u => recommendedSet.add(u));
@@ -653,12 +656,42 @@ function openRestDetail(name, category, address, comment, tier, kakao_id, img_ur
     document.getElementById('detail-comment').innerText = comment && comment !== "undefined" ? `"${comment}"` : "등록된 미식평이 없습니다.";
     document.getElementById('detail-tier').innerText = tier ? `⭐️ ${tier.split(' ')[0]}` : "New Entry";
     
+    // =========================================================
+    // 💡 [CTO 패치 1] 구글/카카오 아이디 마스킹 (미식가_XXXX)
+    // =========================================================
+    let displayOwner = owner;
+    if (owner && (owner.startsWith('google_') || owner.startsWith('kakao_'))) {
+        displayOwner = '미식가_' + owner.slice(-4); // 맨 뒤 4자리만 가져옵니다.
+    }
+
     const ownerBtn = document.getElementById('detail-owner');
-    ownerBtn.innerText = `✍️ ${owner}`;
+    ownerBtn.innerText = `✍️ ${displayOwner}`; // 보기 흉한 원본 대신 예쁜 닉네임 표시!
+    
     ownerBtn.onclick = function() { 
         closeRestDetail(); 
-        fetchGuideView(owner, true); 
+        fetchGuideView(owner, true); // ⚠️ 클릭 시 이동은 반드시 원본 아이디(owner)로 해야 작동합니다.
     };
+
+    // =========================================================
+    // 💡 [CTO 패치 2] 시그니처 메뉴 동적 생성 및 표시
+    // =========================================================
+    // (추후 파라미터로 진짜 시그니처 메뉴 데이터를 받기 전까지 보여줄 텍스트)
+    let displayMenu = "시그니처 메뉴 (준비 중)"; 
+    
+    let sigEl = document.getElementById('detail-signature');
+    if (!sigEl) {
+        // HTML에 시그니처 칸이 없으면, 자바스크립트가 카테고리 밑에 강제로 만들어줍니다.
+        sigEl = document.createElement('div');
+        sigEl.id = 'detail-signature';
+        sigEl.style.cssText = "font-size: 13px; font-weight: 800; margin-top: 10px; color: var(--brand-fab);";
+        
+        // 'detail-category' 요소 바로 밑에 삽입
+        const catEl = document.getElementById('detail-category');
+        if(catEl && catEl.parentNode) {
+            catEl.parentNode.insertBefore(sigEl, catEl.nextSibling);
+        }
+    }
+    sigEl.innerHTML = `🍽️ 시그니처 메뉴: <span style="color: #EFE9D9; font-weight: 600;">${displayMenu}</span>`;
 
     const followBtn = document.getElementById('detail-follow-btn');
     if (owner === user || !owner || owner === 'undefined') {
