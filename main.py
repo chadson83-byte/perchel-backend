@@ -63,7 +63,7 @@ class ImageUpdateRequest(BaseModel):
     image_url: str
 
 # =========================================================
-# [4] 소셜 로그인 (MongoDB 연동 및 구글 프사 동기화)
+# [4] 소셜 로그인 (MongoDB 연동 및 초기 1회 프사 세팅)
 # =========================================================
 @app.post("/login/social")
 async def social_login(req: SocialLoginRequest):
@@ -93,17 +93,20 @@ async def social_login(req: SocialLoginRequest):
     else:
         raise HTTPException(status_code=400, detail="지원하지 않는 소셜 로그인입니다.")
 
-    # 💡 CTO 핵심 패치: $set과 $setOnInsert를 분리하여 중복 방지 및 구글 프사 자동 연동!
+    # 💡 [CTO 핵심 패치] 프사와 이름은 '최초 가입 시($setOnInsert)'에만 저장!
+    # 이렇게 해야 나중에 유저가 앱에서 직접 바꾼 프사가 로그인할 때마다 날아가지 않습니다.
     await users_col.update_one(
         {"user_id": user_id},
         {
             "$set": {
-                "display_name": display_name,
-                "profile_image": profile_image, # 구글/카카오 프사 강제 동기화
+                # 매번 로그인할 때마다 갱신할 정보 (접속 시간)
                 "last_login": datetime.now().isoformat()
             },
             "$setOnInsert": {
-                "following": [], # 로그인 시 팔로우 목록 초기화 방지
+                # 🚨 오직 '처음 가입할 때 딱 한 번만' 세팅할 정보들!
+                "display_name": display_name,
+                "profile_image": profile_image, # 처음에만 구글/카카오 프사로 세팅
+                "following": [], # 로그인 시 팔로우 목록 초기화 절대 방어
                 "followers": 0,
                 "philosophy": "",
                 "taste_tags": [],
