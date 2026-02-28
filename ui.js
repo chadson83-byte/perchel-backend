@@ -243,3 +243,47 @@ function handleSwipe() {
         switchTab(swipeTabs[prevIndex]);
     }
 }
+// =========================================================
+// [16] 스마트폰 하드웨어 뒤로가기 완벽 제어 (앱 종료 방지)
+// =========================================================
+if (typeof Capacitor !== 'undefined' && Capacitor.Plugins && Capacitor.Plugins.App) {
+    // 💡 네이티브 앱 환경(Android/iOS)일 때 작동
+    Capacitor.Plugins.App.addListener('backButton', function() {
+        
+        // 1순위: 화면에 열려있는 팝업 모달창이 있는지 확인 (방명록, 상세창, 검색창 등)
+        const openModals = Array.from(document.querySelectorAll('.bottom-modal')).filter(m => window.getComputedStyle(m).display === 'flex' || window.getComputedStyle(m).display === 'block');
+        
+        if (openModals.length > 0) {
+            // 가장 상단에 뜬 모달만 스르륵 닫음 (앱 안 꺼짐)
+            openModals[openModals.length - 1].style.display = 'none';
+            return;
+        }
+
+        // 2순위: 현재 탭이 '홈(home)'이 아니면 '홈'으로 탭 이동
+        const activeNav = document.querySelector('.nav-item.active');
+        if (activeNav && activeNav.id !== 'm-home') {
+            switchTab('home');
+            return;
+        }
+
+        // 3순위: 홈 탭이고 열린 모달도 없으면 비로소 앱 종료
+        Capacitor.Plugins.App.exitApp();
+    });
+} else {
+    // 💡 모바일 웹 브라우저(크롬, 사파리) 환경일 때의 대비책
+    window.history.pushState({ page: 'init' }, '', '');
+    window.addEventListener('popstate', function(event) {
+        const openModals = Array.from(document.querySelectorAll('.bottom-modal')).filter(m => window.getComputedStyle(m).display === 'flex' || window.getComputedStyle(m).display === 'block');
+        if (openModals.length > 0) {
+            openModals[openModals.length - 1].style.display = 'none';
+            window.history.pushState({ page: 'modal_closed' }, '', '');
+            return;
+        }
+        const activeNav = document.querySelector('.nav-item.active');
+        if (activeNav && activeNav.id !== 'm-home') {
+            switchTab('home');
+            window.history.pushState({ page: 'home' }, '', '');
+            return;
+        }
+    });
+}

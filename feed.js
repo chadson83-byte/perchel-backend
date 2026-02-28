@@ -53,7 +53,7 @@ async function fetchHomeData() {
             
             let html = '';
             list.forEach(r => {
-                const finalImg = getSmartRestImage(r.kakao_id, r.category, r.image_url);
+                const finalImg = getSmartRestImage(r.kakao_id, r.category, r.global_top_photo || r.image_url);
                 
                 let displayName = r.owner;
                 const ownerObj = (d.all_editors || []).find(e => e.username === r.owner);
@@ -188,7 +188,7 @@ function renderRankingList(rankingData, container) {
         html = `<div style="text-align:center; padding:40px; border:1px dashed var(--border-color); border-radius:12px; color:var(--text-sub); font-size:13px;">검색된 조건의 랭킹 데이터가 없습니다.</div>`;
     } else {
         rankingData.forEach((r, idx) => {
-            const finalImg = getSmartRestImage(r.kakao_id, r.category, r.image_url);
+            const finalImg = getSmartRestImage(r.kakao_id, r.category, r.global_top_photo || r.image_url);
             let rankBadge = `<div style="font-size:18px; font-weight:900; color:var(--text-sub);">${idx + 1}</div>`;
             if(idx === 0) rankBadge = `<div style="font-size:24px;">🥇</div>`;
             else if (idx === 1) rankBadge = `<div style="font-size:24px;">🥈</div>`;
@@ -282,7 +282,7 @@ async function fetchExploreFeed() {
         feedList.reverse().forEach(function(r) {
             const isMe = (r.owner === current); 
             const isFollowing = followingList.includes(r.owner);
-            const finalImg = getSmartRestImage(r.kakao_id, r.category, r.image_url);
+            const finalImg = getSmartRestImage(r.kakao_id, r.category, r.global_top_photo || r.image_url);
             const fallbackImg = "https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80";
             
             const safeName = (r.name || '').replace(/`/g, "");
@@ -370,11 +370,19 @@ function closeSearchModal() {
 }
 
 async function executeKakaoSearch() {
-    const keyword = document.getElementById('search-keyword').value;
+    const keyword = document.getElementById('search-keyword').value.trim();
     if (!keyword) return;
     
+    // 💡 CTO 추가: 카카오 검색 시 메뉴 이름을 치면 카테고리를 살짝 붙여서 정확도 200% 향상!
+    let finalKeyword = keyword;
+    if (['탕수육', '짜장', '짬뽕', '마라'].some(k => keyword.includes(k))) finalKeyword = keyword + ' 중식';
+    if (['스시', '초밥', '사시미', '오마카세'].some(k => keyword.includes(k))) finalKeyword = keyword + ' 일식';
+    if (['파스타', '피자', '스테이크'].some(k => keyword.includes(k))) finalKeyword = keyword + ' 양식';
+    if (['삼겹살', '갈비', '한우'].some(k => keyword.includes(k))) finalKeyword = keyword + ' 고기';
+    
     try {
-        const res = await fetch(`${API_URL}/search/kakao?query=${encodeURIComponent(keyword)}`);
+        // keyword 대신 finalKeyword를 서버로 보냅니다.
+        const res = await fetch(`${API_URL}/search/kakao?query=${encodeURIComponent(finalKeyword)}`);
         const d = await res.json();
         
         if (d.errorType || d.msg || d.code) {

@@ -30,11 +30,34 @@ function initGlobalMap() {
 
 function moveToMyLocation() {
     if (navigator.geolocation && globalMap) {
-        navigator.geolocation.getCurrentPosition(function(position) {
-            const loc = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
-            globalMap.setCenter(loc);
-            globalMap.setLevel(4);
-        });
+        // 웹뷰 환경을 고려한 고정밀도 옵션 추가
+        const options = {
+            enableHighAccuracy: true, // GPS를 적극적으로 사용
+            timeout: 10000,           // 10초까지 기다림 (앱 환경은 웹보다 느릴 수 있음)
+            maximumAge: 0             // 이전 위치 캐시 무시
+        };
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                // 성공 시
+                const loc = new kakao.maps.LatLng(position.coords.latitude, position.coords.longitude);
+                globalMap.setCenter(loc);
+                globalMap.setLevel(4);
+            },
+            function(error) {
+                // 에러 처리 (웹뷰에서 막히면 여기서 콘솔에 이유를 뱉습니다)
+                console.error("위치 획득 실패 (코드 " + error.code + "): " + error.message);
+                
+                if (error.code === 1) {
+                    alert("앱의 위치 권한이 거부되었습니다. 스마트폰 설정에서 권한을 허용해주세요.");
+                } else {
+                    alert("현재 위치를 찾을 수 없습니다. (GPS 신호 약함)");
+                }
+            },
+            options
+        );
+    } else {
+        alert("이 기기에서는 위치 기능을 지원하지 않습니다.");
     }
 }
 

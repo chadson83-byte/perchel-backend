@@ -30,7 +30,7 @@
     --radius-lg: 16px; 
     --radius-md: 12px;
     
-    color-scheme: light only !important; /* 🚨 모바일 다크모드 방어 */
+    color-scheme: light only !important; /* 모바일 다크모드 방어 */
 }
 
 * { 
@@ -41,7 +41,7 @@
     outline: none; 
 }
 
-/* 🚨 모바일 다크모드 색상 변조를 막기 위한 !important 속성 부여 */
+/* 모바일 다크모드 색상 변조를 막기 위한 !important 속성 부여 */
 body, html { 
     font-family: 'Pretendard', sans-serif; 
     background-color: var(--bg-main) !important; 
@@ -69,74 +69,60 @@ body, html {
 }
 
 /* =========================================================
-   [2] 스플래시 인트로
+   [2] 다채로운 스플래시 인트로 (애니메이션 최적화)
    ========================================================= */
-#splash-screen { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: 100%; 
-    background: #FFFFFF !important; 
-    z-index: 9999; 
-    display: flex; 
-    justify-content: center; 
-    align-items: center; 
-    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); 
+#splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    /* 4가지 색상이 부드럽게 섞이는 그라데이션 */
+    background: linear-gradient(-45deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF);
+    background-size: 400% 400%;
+    animation: gradientBG 4s ease infinite;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    transition: opacity 0.8s ease-out, visibility 0.8s ease-out;
 }
 
-.splash-content { 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
 }
 
-.splash-logo-wrapper {
-    overflow: hidden; 
-    padding-bottom: 5px;
+.splash-logo {
+    font-size: 52px;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    animation: popIn 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
-.splash-logo { 
-    font-size: 52px; 
-    font-weight: 900; 
-    color: var(--brand-primary); 
-    font-style: italic; 
-    letter-spacing: -2px; 
-    transform: translateY(100%); 
-    opacity: 0;
-    filter: blur(8px); 
-    animation: slideUpReveal 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
-.splash-logo .dot {
-    color: var(--brand-fab); 
-}
-
-.splash-line {
-    width: 0px;
-    height: 3px;
-    background: var(--brand-fab);
-    margin: 10px 0;
-    border-radius: 2px;
-    animation: expandLine 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
-}
-
-.splash-sub { 
-    font-size: 11px; 
-    color: var(--text-sub) !important; 
-    text-transform: uppercase; 
+.splash-subtext {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.9);
+    margin-top: 12px;
     font-weight: 700;
-    letter-spacing: 0px; 
-    opacity: 0; 
-    transform: translateY(10px);
-    animation: fadeExpand 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s forwards; 
+    opacity: 0;
+    animation: fadeInUp 1s ease 0.5s forwards;
 }
 
-@keyframes slideUpReveal { to { transform: translateY(0); opacity: 1; filter: blur(0); } }
-@keyframes expandLine { to { width: 30px; } }
-@keyframes fadeExpand { to { opacity: 1; letter-spacing: 4px; transform: translateY(0); } }
+@keyframes fadeInUp {
+    0% { transform: translateY(15px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
 
-/* 🚨 [해결 2] PWA 배너 정중앙 고정 보정 */
+/* PWA 배너 정중앙 고정 보정 */
 #pwa-install-banner {
     display: none;
     position: fixed;
@@ -169,28 +155,20 @@ body, html {
 }
 
 /* =========================================================
-   [3] 상단 네비게이션
+   [3] 상단 네비게이션 (오렌지 포인트 & 투명 배경)
    ========================================================= */
 .top-bar { 
     width: 100%; 
-    background: rgba(247, 247, 249, 0.9) !important; 
-    backdrop-filter: blur(15px); 
-    -webkit-backdrop-filter: blur(15px);
+    /* 상단바 배경은 투명하게 (답답함 해소) */
+    background: transparent !important; 
     display: flex; 
     justify-content: center; 
     position: fixed; 
     top: 0; 
     left: 0; 
     z-index: 1000; 
-    border-bottom: 1px solid var(--border-color);
+    border-bottom: none !important;
     transition: background 0.3s ease, border-color 0.3s ease;
-}
-
-.top-bar.transparent {
-    background: transparent !important;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-bottom: none;
 }
 
 .top-bar-content { 
@@ -202,13 +180,14 @@ body, html {
     align-items: center; 
     padding: 0 24px; 
     gap: 12px;
-    white-space: nowrap; /* 🚨 전체 줄바꿈 방지 */
+    white-space: nowrap; 
 }
 
+/* 로고 글씨 오렌지색 포인트 */
 .top-logo { 
     font-size: 32px; 
     font-weight: 900; 
-    color: var(--brand-primary); 
+    color: var(--brand-fab) !important; /* 주황색 로고 */
     cursor: pointer; 
     letter-spacing: -1.5px; 
     font-style: italic; 
@@ -216,10 +195,10 @@ body, html {
     flex-shrink: 0;
 }
 
+/* 탭 전환 시 흰색 로고 (홈 배너 위에서) */
 .top-bar.transparent .top-logo { color: #FFFFFF !important; text-shadow: 0 2px 6px rgba(0,0,0,0.4); }
 .top-bar.transparent .svg-icon { stroke: #FFFFFF !important; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4)); }
 .top-bar.transparent #global-region-select { color: #FFFFFF !important; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
-.top-bar.transparent .lang-toggle { color: #FFFFFF !important; border-color: rgba(255,255,255,0.6); }
 
 #global-region-select {
     background: transparent; 
@@ -234,33 +213,36 @@ body, html {
     transition: color 0.3s ease;
     flex-shrink: 0;
 }
-
 #global-region-select option { background-color: #FFFFFF !important; color: #111111 !important; text-shadow: none; }
 
-/* 🚨 [해결 2] 3D 스큐어모피즘 입체감 적용 및 레이아웃 강제 고정 */
-.mentor-btn { 
-    background: linear-gradient(145deg, #2a2d32, #181a1d) !important;
-    color: #FFFFFF !important; 
-    padding: 8px 15px !important; 
-    border-radius: 20px; 
-    font-size: 14px !important; 
-    font-weight: 900; 
-    display: flex; 
-    align-items: center; 
-    gap: 4px; 
-    cursor: pointer; 
-    transition: all 0.3s ease;
-    white-space: nowrap !important; /* 🚨 절대 줄바꿈 금지 */
-    flex-shrink: 0 !important; /* 🚨 절대 크기 축소 금지 */
-    box-shadow: 4px 4px 10px rgba(0,0,0,0.3), -2px -2px 8px rgba(255,255,255,0.1), inset 1px 1px 2px rgba(255,255,255,0.1) !important;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-    border: 1px solid #333 !important;
+/* 우측 아이콘 오렌지색 포인트 */
+.svg-icon { 
+    stroke: var(--brand-fab) !important; 
+    width: 24px; height: 24px; 
+    stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round;
+    flex-shrink: 0 !important; 
 }
 
-.mentor-btn:active {
-    box-shadow: inset 4px 4px 10px rgba(0,0,0,0.5), inset -2px -2px 8px rgba(255,255,255,0.05) !important;
-    transform: scale(0.97);
+/* M 버튼: 주황색 원형으로 돋보이게 변경 */
+.mentor-btn { 
+    background: var(--brand-fab) !important; /* 주황색 배경 */
+    color: #FFFFFF !important; /* M 글씨 흰색 */
+    width: 40px !important; 
+    height: 40px !important;
+    border-radius: 50% !important; /* 완전한 원형 */
+    font-size: 22px !important; 
+    font-weight: 900 !important; 
+    display: flex !important; 
+    align-items: center !important; 
+    justify-content: center !important; 
+    cursor: pointer; 
+    transition: all 0.3s ease;
+    flex-shrink: 0 !important; 
+    box-shadow: 0 4px 10px rgba(255, 90, 32, 0.4) !important; /* 주황색 그림자 */
+    border: none !important; /* 테두리 제거 */
 }
+.mentor-btn span { margin-top: 2px; }
+.mentor-btn:active { transform: scale(0.95); }
 
 .lang-toggle { 
     background: transparent; 
@@ -275,8 +257,6 @@ body, html {
     white-space: nowrap;
     flex-shrink: 0;
 }
-
-.svg-icon { flex-shrink: 0 !important; }
 
 /* =========================================================
    [4] 하단 네비게이션 & 오렌지 FAB
@@ -310,7 +290,7 @@ body, html {
 }
 
 .nav-item.active { color: var(--brand-fab) !important; }
-.nav-icon { width: 22px; height: 22px; margin-bottom: 4px; opacity: 0.8; transition: all 0.2s; }
+.nav-icon { width: 22px; height: 22px; margin-bottom: 4px; opacity: 0.8; transition: all 0.2s; stroke: currentColor !important; }
 .nav-item.active .nav-icon { opacity: 1; stroke-width: 2.5; stroke: var(--brand-fab) !important; }
 
 .nav-fab-wrapper { position: relative; width: 60px; display: flex; justify-content: center; }
@@ -341,41 +321,70 @@ body, html {
 .home-section-container { padding: 0 24px; }
 
 .home-top-banner {
-    width: 100%; height: 480px; border-radius: 0 0 32px 32px; 
-    background-image: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 40%, rgba(0,0,0,0.85) 100%), url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'); 
-    background-size: cover; background-position: center; display: flex; flex-direction: column; justify-content: flex-end; padding: 40px 24px 60px; color: white !important; margin-bottom: 30px; box-shadow: var(--shadow-card);
+    /* 배경을 어둡게 눌러주고, image_9.png를 적용 (고화질 플레이팅 사진 대체용) */
+    background-image: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?q=80&w=2000&auto=format&fit=crop') !important; 
+    background-size: cover;
+    background-position: center;
+    padding: 80px 24px 30px;
+    min-height: 220px; /* 세로 길이를 짧게 유지 */
+    border-radius: 0 0 30px 30px;
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
-.home-top-banner-title { font-size: 36px; font-weight: 900; line-height: 1.3; margin-bottom: 12px; letter-spacing: -1px; text-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-.home-top-banner-sub { font-size: 15px; font-weight: 500; opacity: 0.9; letter-spacing: -0.5px; }
+.home-top-banner-title {
+    font-size: 32px;
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: 8px;
+    text-shadow: 0 4px 15px rgba(0,0,0,0.6);
+}
+
+.home-top-banner-sub {
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+}
 .section-title { font-size: 18px; font-weight: 800; color: var(--text-main); margin: 40px 0 20px; display: flex; align-items: center; }
 
 .editor-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 20px; scrollbar-width: none; scroll-snap-type: x mandatory; }
 .editor-row::-webkit-scrollbar { display: none; }
 
-.editor-card { 
-    background: rgba(255, 255, 255, 0.35) !important;
-    backdrop-filter: blur(20px); 
-    -webkit-backdrop-filter: blur(20px); 
-    padding: 24px 16px; 
-    border-radius: 24px; 
-    min-width: 130px; 
-    flex-shrink: 0; 
-    text-align: center; 
-    cursor: pointer; 
-    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.08); 
-    border: 1px solid rgba(255, 255, 255, 0.8); 
-    scroll-snap-align: start; 
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+/* 🔥 CTO 수정: 인기 미식가 카드 초기 세로형 유리 질감으로 롤백 */
+.editor-card {
+    width: 140px !important;
+    min-width: 140px !important;
+    height: 180px !important;
+    padding: 16px 12px !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    text-align: center !important;
+
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.15) 100%) !important;
+    backdrop-filter: blur(20px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.3) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), inset 0 0 15px rgba(255,255,255,0.5) !important;
+    border-radius: 20px !important;
 }
 
 .editor-card:active { transform: scale(0.96); }
 
-.editor-img-container { width: 64px; height: 64px; margin: 0 auto 12px; position: relative; border-radius: 50%; background: linear-gradient(45deg, var(--brand-primary), #FF8C60); padding: 3px; }
+/* 프로필 중앙 정렬 보정 */
+.editor-img-container { width: 64px; height: 64px; margin: 0 auto 10px !important; position: relative; border-radius: 50%; background: linear-gradient(45deg, var(--brand-primary), #FF8C60); padding: 3px; }
 .avatar-circle { width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: #FFFFFF !important; border: 2px solid #FFFFFF; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
 
 .editor-follow-btn {
-    background: var(--brand-fab) !important; color: #FFFFFF !important; border: none !important; font-weight: 800; padding: 10px 0 !important; font-size: 12px !important; border-radius: 20px !important; margin-top: 14px !important; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(255, 90, 32, 0.3); transition: transform 0.2s;
+    background: var(--brand-fab) !important; color: #FFFFFF !important; border: none !important; font-weight: 800; padding: 10px 0 !important; font-size: 12px !important; border-radius: 20px !important; margin-top: 10px !important; cursor: pointer; width: 100%; box-shadow: 0 4px 12px rgba(255, 90, 32, 0.3); transition: transform 0.2s;
 }
 .editor-follow-btn:active { transform: scale(0.95); }
 
@@ -388,19 +397,46 @@ body, html {
 .rest-name { font-weight: 800; font-size: 15px; margin-bottom: 4px; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* =========================================================
-   [6] 하이엔드 프로필 다크 카드 
+   [6] 하이엔드 프로필 다크 카드 (비중 축소)
    ========================================================= */
-.profile-dash { background: linear-gradient(135deg, #0B1C1D, #162C2D) !important; border-radius: var(--radius-xl); padding: 40px 24px; color: white !important; margin-bottom: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.15); position: relative; overflow: hidden; }
-.dash-pic-container { width: 90px; height: 90px; border-radius: 50%; margin: 0 auto 16px; border: 3px solid rgba(255,255,255,0.2); padding: 3px; position: relative; cursor: pointer; }
-.profile-philosophy { font-size: 14px; font-style: italic; color: rgba(255,255,255,0.7) !important; margin: 12px 0 20px; line-height: 1.5; font-weight: 500; }
-.profile-dna-tags { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+/* 🔥 CTO 수정: 상단 녹색칸 높이/비중 대폭 축소 (서열표 공간 확보) */
+.profile-dash { 
+    background: linear-gradient(135deg, #0B1C1D, #162C2D) !important; 
+    border-radius: var(--radius-xl); 
+    padding: 20px 24px !important; /* 패딩 축소 */
+    color: white !important; 
+    margin-bottom: 15px !important; /* 마진 축소 */
+    text-align: center; 
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15); 
+    position: relative; 
+    overflow: hidden; 
+}
+.dash-pic-container { 
+    width: 70px !important; /* 프로필 사진 크기 축소 */
+    height: 70px !important; 
+    border-radius: 50%; 
+    margin: 0 auto 10px !important; 
+    border: 3px solid rgba(255,255,255,0.2); 
+    padding: 3px; 
+    position: relative; 
+    cursor: pointer; 
+}
+.profile-philosophy { font-size: 13px !important; font-style: italic; color: rgba(255,255,255,0.7) !important; margin: 8px 0 12px !important; line-height: 1.5; font-weight: 500; }
+.profile-dna-tags { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .dna-tag { background: rgba(255,255,255,0.1) !important; color: #FFF !important; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
-.dash-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3) !important; padding: 20px; border-radius: var(--radius-lg); margin-top: 20px; }
+.dash-stats { display: flex; justify-content: space-around; background: rgba(0,0,0,0.3) !important; padding: 12px !important; border-radius: var(--radius-lg); margin-top: 10px !important; }
+
+/* 프로필 우측 상단 수정 버튼용 */
+.avatar-wrapper { position: relative; display: inline-block; }
+.edit-floating-btn {
+    position: absolute; top: 0; right: -10px; background: #333; color: white; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.2); font-size: 14px; z-index: 10;
+}
 
 /* =========================================================
    [7] 서열표 랭킹 UI 
    ========================================================= */
 .tier-header-title { font-size: 18px; font-weight: 900; color: var(--text-main); margin: 40px 0 15px; text-transform: uppercase; letter-spacing: -0.5px; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; display: flex; justify-content: space-between; align-items: flex-end; }
+.tier-list-item { background: #ffffff; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); border-left: 5px solid var(--brand-primary); display: flex; flex-direction: column; gap: 8px; }
 .guide-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .guide-card { position: relative; width: 100%; aspect-ratio: 1; border-radius: 16px; overflow: hidden; box-shadow: var(--shadow-soft); cursor: pointer; background: #eee; }
 .guide-card-bg { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
@@ -421,7 +457,6 @@ body, html {
 .btn-primary { width: 100%; padding: 16px; border-radius: 12px; border: none; background: var(--brand-primary) !important; color: white !important; font-weight: 700; font-size: 15px; cursor: pointer; transition: transform 0.2s; }
 .btn-primary:active { transform: scale(0.98); }
 .noti-badge { position: absolute; top: 0px; right: 0px; background: red; width: 8px; height: 8px; border-radius: 50%; display: none; border: 1px solid white; }
-.svg-icon { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
 ::-webkit-scrollbar { display: none; }
 .multi-image-slider { width: 100%; display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: 10px; padding-bottom: 10px; scrollbar-width: none; margin-bottom: 20px; }
 .multi-image-slide { flex: 0 0 100%; height: 300px; scroll-snap-align: center; border-radius: var(--radius-lg); object-fit: cover; background: #111; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
@@ -438,16 +473,12 @@ body, html {
 }
 
 /* =========================================================
-   [추가] 모바일 최적화 및 레이아웃 겹침 방지 (여기서부터 제가 추가한 부분입니다)
+   [추가] 모바일 최적화 및 레이아웃 겹침 방지
    ========================================================= */
-
-/* 1. 로그인 섹션 샐러드 배경 수정 */
+/* 1. 로그인 섹션 진회색 배경 수정 */
 #login-section {
-    /* 기존 배경 설정에 사진을 추가하고, 고정시킵니다 */
-    background-image: url('https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80'); /* 🚨 실제 샐러드 이미지 경로로 수정하세요 */
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed; 
+    background-color: #1A1A1C !important; /* 검은색에 가까운 고급스러운 진회색 */
+    background-image: none !important; 
 }
 
 /* 2. 상단 헤더 겹침 방지 (스마트폰 시계/배터리 영역 확보) */
@@ -475,9 +506,196 @@ body, html {
     padding-top: calc(70px + env(safe-area-inset-top, 20px)) !important;
     padding-bottom: 0 !important;
 }
+/* =========================================================
+   [CTO 긴급 패치] 다크 프리미엄 매거진 테마 적용
+   ========================================================= */
+/* 1. 배경 및 텍스트 컬러 다크 모드 강제 전환 */
+:root {
+    --bg-main: #121212 !important; /* 깊고 고급스러운 검은색/진회색 바탕 */
+    --bg-card: #1E1E1E !important; /* 카드 배경 */
+    --text-main: #EFE9D9 !important; /* 메인 텍스트: 고급 베이지 */
+    --text-sub: #A09D96 !important; /* 서브 텍스트: 톤 다운된 베이지/그레이 */
+    --border-color: #333333 !important;
+}
+
+/* 2. 상단 배너 텍스트 겹침 완벽 해결 */
+.home-top-banner-premium {
+    /* 상단바(70px) 밑으로 글자가 안전하게 내려오도록 패딩 대폭 추가 */
+    padding: 110px 24px 30px !important; 
+    background-image: linear-gradient(to bottom, rgba(18,18,18,0.4), rgba(18,18,18,0.95)), url('https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?q=80&w=2000&auto=format&fit=crop') !important;
+    background-size: cover !important;
+    background-position: center !important;
+    border-radius: 0 0 30px 30px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+}
+
+.home-top-banner-title span {
+    color: #EFE9D9 !important;
+    font-size: 28px !important;
+    font-weight: 900 !important;
+    letter-spacing: -1px !important;
+}
+
+/* 3. 영문 부제가 포함된 매거진 스타일 타이틀 */
+.section-title-premium {
+    margin: 40px 0 16px !important;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.section-title-premium h2 {
+    font-size: 20px !important;
+    font-weight: 800 !important;
+    color: #EFE9D9 !important;
+    letter-spacing: -0.5px;
+    margin: 0 !important;
+}
+.section-subtitle {
+    font-size: 11px;
+    font-weight: 500;
+    color: #888888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 4. 세로형 멘토 카드 다크 톤 다운 (눈 안 아프게) */
+.editor-card {
+    background: linear-gradient(135deg, rgba(40, 40, 40, 0.8) 0%, rgba(20, 20, 20, 0.9) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5) !important;
+    color: #EFE9D9 !important;
+}
+.editor-card .avatar-circle {
+    background: #121212 !important;
+    border: 2px solid #333 !important;
+}
+
+/* 5. 하단 네비게이션 및 + 버튼 주황색 후광(Glow) 효과 */
+.bottom-nav {
+    background: rgba(18, 18, 18, 0.95) !important;
+    border-top: 1px solid #222 !important;
+}
+.nav-fab {
+    border: 4px solid #121212 !important; /* 배경 테두리 일치 */
+    box-shadow: 0 0 24px rgba(255, 90, 32, 0.5), inset 0 0 10px rgba(255, 255, 255, 0.2) !important; /* 영롱한 불빛 효과 */
+}
+/* =========================================================
+   [탐색 & 내 프로필] 프리미엄 다크 매거진 테마 이식
+========================================================= */
+/* 1. 입력창 & 폼 요소 다크화 (차콜 그레이) */
+.input-field { 
+    background: #1A1A1C !important; 
+    border: 1px solid #333333 !important; 
+    color: #EFE9D9 !important; /* 베이지 텍스트 */
+}
+.input-field::placeholder { color: #666666 !important; }
+
+/* 2. 탐색 탭 버튼 스타일링 */
+.explore-tab-btn {
+    flex: 1; padding: 14px 0; border-radius: 12px; font-weight: 800; font-size: 14px;
+    background: #1A1A1C; color: #888888; border: 1px solid #333; cursor: pointer; transition: 0.3s;
+}
+.explore-tab-btn.active {
+    background: var(--brand-fab) !important; color: #FFFFFF !important; border: none;
+    box-shadow: 0 4px 15px rgba(255, 90, 32, 0.3);
+}
+
+/* 3. 프로필 뷰 - 새로운 경험 기록하기 버튼 (다크 글래스모피즘) */
+#registration-trigger {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.8), rgba(20, 20, 20, 0.9)) !important;
+    border: 1px dashed #444 !important;
+    color: #EFE9D9 !important;
+}
+#registration-trigger div:last-child { color: #EFE9D9 !important; }
+
+/* 4. 프로필 대시보드 내부 텍스트 베이지색 통일 */
+#display-profile-name { color: #EFE9D9 !important; }
+.dash-stats div div:last-child { color: #A09D96 !important; }
+
+/* 5. 미식 서열표(가이드) 타이틀 선 색상 */
+.tier-header-title { 
+    border-bottom: 1px solid #333333 !important; 
+    color: #EFE9D9 !important; 
+}
 
 /* =========================================================
-   끝
-   ========================================================= */
-        }
-        
+   [상세 페이지 & 알림] 프리미엄 디테일 패치
+========================================================= */
+/* 1. 프리미엄 토스트(알림) 애니메이션 */
+#premium-toast {
+    position: fixed;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(30, 30, 30, 0.95) !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #EFE9D9 !important;
+    padding: 14px 24px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 9999;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    white-space: nowrap;
+}
+#premium-toast.toast-show {
+    bottom: 100px; /* 네비게이션 바 바로 위로 부드럽게 올라옴 */
+}
+
+/* 2. 상세 페이지 다크 폼 최적화 */
+.detail-dark-box {
+    background: #1A1A1C !important; 
+    padding: 20px 24px; 
+    border-radius: 20px; 
+    margin-bottom: 20px; 
+    border: 1px solid #333 !important;
+}
+.detail-section-label {
+    font-size: 11px; 
+    color: #888; 
+    font-weight: 800; 
+    margin-bottom: 12px; 
+    letter-spacing: 1px;
+}
+/* =========================================================
+   [식당 검색 & 등록] 텍스트 색상 다크 테마 완벽 패치
+========================================================= */
+/* 1. 검색 결과 리스트 & 모달창 내부의 식당 이름 (베이지색) */
+#search-results-target div,
+#search-results-target strong,
+.user-result-item div,
+.search-item-name, 
+.place-name,
+.modal-body h2,
+.modal-body h3,
+.modal-body label {
+    color: #EFE9D9 !important; 
+}
+
+/* 2. 검색 결과의 주소, 카테고리 등 부가 설명 (연회색) */
+#search-results-target span,
+#search-results-target small,
+#search-results-target p,
+.search-item-address, 
+.place-address {
+    color: #A09D96 !important;
+}
+
+.pac-container {
+    background-color: #1A1A1C !important;
+    border: 1px solid #333333 !important;
+}
+.pac-item, .pac-item-query, .pac-item span {
+    color: #EFE9D9 !important;
+}
+.pac-item:hover {
+    background-color: #2A2A2C !important;
+}

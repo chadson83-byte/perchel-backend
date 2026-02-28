@@ -18,28 +18,23 @@ function getAvatar(username) {
     let initial = username ? username.charAt(0).toUpperCase() : '?';
     let imgSrc = userProfiles[username] ? userProfiles[username] : '';
 
-    // 사진이 없을 때 보여줄 기본 G/이니셜 화면
+    // [수정됨] 1. 사진이 없을 때 보여줄 기본 이니셜 화면 (코드 깨짐 방지)
     let fallbackHtml = `
-        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: var(--border-color); color: var(--brand-primary); font-weight: 900; font-size: 1.5em; text-transform: uppercase;">
+        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: #EAEAEA; color: var(--brand-primary); font-weight: 900; font-size: 1.5em; text-transform: uppercase;">
             ${initial}
         </div>
     `;
 
     let imgTag = '';
-    if (imgSrc) {
-        // 사진이 있으면 출력하고, 서버에러로 깨지면 즉시 fallback 표시
-        imgTag = `
-            <img src="${imgSrc}" style="width:100%; height:100%; object-fit:cover;" 
-                 onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <div style="display:none; width:100%; height:100%;">${fallbackHtml}</div>
-        `;
-    } else {
-        imgTag = fallbackHtml;
+    if (imgSrc && imgSrc !== "null" && imgSrc !== "undefined") {
+        // 이미지가 깨지면 투명하게 숨겨서 밑에 깔린 글자(fallback)가 보이게 처리
+        imgTag = `<img src="${imgSrc}" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0;" onerror="this.style.display='none';">`;
     }
 
     return `
         <div style="position:relative; width:100%; height:100%;">
-            <div class="avatar-circle" style="width:100%; height:100%; border-radius:50%; overflow:hidden;">
+            <div class="avatar-circle" style="width:100%; height:100%; border-radius:50%; overflow:hidden; position:relative; background:#eee;">
+                ${fallbackHtml}
                 ${imgTag}
             </div>
             ${badge}
@@ -71,15 +66,13 @@ function getSmartRestImage(id, category, userImg) {
     return 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=800&q=80'; 
 }
 
-// 수정됨: 사진이 바로 바뀌지 않는 현상(캐시) 방지 코드 추가
 async function fetchUserProfiles() {
     try {
         const res = await fetch(`${API_URL}/users/profiles`);
         if (res.ok) {
             const data = await res.json();
-            const timestamp = new Date().getTime(); // 현재 시간을 구함
+            const timestamp = new Date().getTime(); 
             
-            // 모든 프로필 이미지 URL 뒤에 시간을 붙여서 브라우저가 매번 새 사진으로 인식하게 만듦
             for (let key in data) {
                 if (data[key] && !data[key].includes('?t=')) {
                     data[key] = data[key] + '?t=' + timestamp;
@@ -120,8 +113,8 @@ function triggerProfileUpload() {
             });
             
             if (res.ok) {
-                alert("프로필 사진이 성공적으로 변경되었습니다! 📸");
-                await fetchUserProfiles(); // 수정됨: 사진 업로드 후 강제 갱신 트리거 작동
+                showPremiumToast("프로필 사진이 업데이트 되었습니다.", "📸");
+                await fetchUserProfiles(); 
                 fetchGuideView(localStorage.getItem('currentUser')); 
             } else { 
                 alert("업로드 실패: 권한이 없거나 이미지 용량이 너무 큽니다."); 
@@ -217,37 +210,41 @@ async function fetchGuideView(u, isForeign = false) {
                     ${isFollowing ? (currentLang==='ko'?'✓ 팔로잉':'✓ Following') : (currentLang==='ko'?'+ 팔로우':'+ Follow')}
                 </button>
             `;
-        } else {
-            profileActionBtn = `
-                <button class="my-journal-btn" onclick="openEditProfileModal()" style="background:rgba(255,255,255,0.1); color:#FFF; border:1px solid rgba(255,255,255,0.3); padding:8px 24px; border-radius:20px; font-size:11px; font-weight:700; cursor:pointer;">
-                    EDIT PROFILE
-                </button>
+        }
+
+        let editFloatingBtn = '';
+        if (isMe) {
+            editFloatingBtn = `
+                <div onclick="event.stopPropagation(); openEditProfileModal();" style="position:absolute; top:-5px; right:-10px; background:#333; color:white; border-radius:50%; width:32px; height:32px; display:flex; align-items:center; justify-content:center; border:2px solid white; box-shadow:0 2px 8px rgba(0,0,0,0.2); font-size:14px; z-index:10; cursor:pointer;">
+                    ✏️
+                </div>
             `;
         }
 
+        // CTO 수정: 뉴비 미식가 중복 노출을 막기 위해 levelHtml 출력부를 하나로 통합했습니다.
         document.getElementById('profile-header-target').innerHTML = `
             <div class="profile-dash">
                 <div class="dash-header">
-                    <div class="dash-pic-container" ${isMe ? `onclick="triggerProfileUpload()"` : ''}>
+                    <div class="dash-pic-container" style="position:relative; display:inline-block;" ${isMe ? `onclick="triggerProfileUpload()"` : ''}>
                         ${getAvatar(u)}
+                        ${editFloatingBtn}
                     </div>
                     
-                    <div style="font-size:26px; font-weight:900; margin-bottom:4px; display:flex; justify-content:center; align-items:center; gap:8px; letter-spacing:-0.5px;">
+                    <div style="font-size:24px; font-weight:900; margin-bottom:4px; display:flex; justify-content:center; align-items:center; gap:8px; letter-spacing:-0.5px;">
                         <span id="display-profile-name">${data.nickname || u}</span>
                     </div>
                     
-                    <div style="font-size:14px; font-weight:600; color:var(--brand-yellow); margin-bottom: 16px;">
+                    <div style="font-size:13px; font-weight:600; color:var(--brand-yellow); margin-bottom: 12px;">
                         ${levelHtml}
                     </div>
                     
                     ${philosophyHtml}
                     ${tagsHtml}
-                    ${badgesHtml}
                     
                     ${profileActionBtn}
                 </div>
                 
-                <div class="dash-stats" id="profile-stats-bar"></div>
+                <div class="dash-stats" id="profile-stats-bar" style="display:flex; justify-content:space-around; background:rgba(255,255,255,0.05); padding:16px; border-radius:16px; margin-top:15px;"></div>
             </div>
         `;
 
@@ -274,6 +271,13 @@ function renderGuideSheet() {
         searchQuery = document.getElementById('guide-search-input').value.toLowerCase();
     }
     
+    // 💡 CTO 추가: 스마트 키워드 매핑 (메뉴를 치면 카테고리까지 같이 검색)
+    let smartKeywords = [searchQuery];
+    if (['탕수육', '짜장', '짬뽕', '마라', '중국집'].some(k => searchQuery.includes(k))) smartKeywords.push('중식');
+    if (['스시', '초밥', '사시미', '회', '오마카세'].some(k => searchQuery.includes(k))) smartKeywords.push('일식');
+    if (['파스타', '피자', '스테이크'].some(k => searchQuery.includes(k))) smartKeywords.push('양식');
+    if (['삼겹살', '갈비', '한우', '소고기', '돼지고기'].some(k => searchQuery.includes(k))) smartKeywords.push('고기');
+    
     const tierMeta = { 
         "⭐⭐⭐ (3스타)": { title: "3 STARS", sub: "NO.1 CLASS", color: "var(--brand-yellow)" }, 
         "⭐⭐ (2스타)": { title: "2 STARS", sub: "PREMIUM", color: "#FFFFFF" }, 
@@ -294,8 +298,15 @@ function renderGuideSheet() {
                 const nameStr = (item.name || '').toLowerCase();
                 const catStr = (item.category || '').toLowerCase();
                 const addrStr = (item.address || '').toLowerCase();
+                const commentStr = (item.comment || '').toLowerCase(); 
                 
-                matchSearch = nameStr.includes(searchQuery) || catStr.includes(searchQuery) || addrStr.includes(searchQuery);
+                // 💡 CTO 수정: 확장된 smartKeywords 중 하나라도 포함되어 있으면 검색 결과에 노출
+                matchSearch = smartKeywords.some(keyword => 
+                    nameStr.includes(keyword) || 
+                    catStr.includes(keyword) || 
+                    addrStr.includes(keyword) || 
+                    commentStr.includes(keyword)
+                );
             }
             
             let matchTab = true;
@@ -311,44 +322,47 @@ function renderGuideSheet() {
             const meta = tierMeta[key];
             
             html += `
-                <div class="tier-section" style="margin-bottom: 30px;">
-                    <div class="tier-header-title">
+                <div class="tier-section" style="margin-bottom: 40px;">
+                    <div style="font-size: 11px; font-weight: 600; color: #888888; letter-spacing: 1px; margin-bottom: 4px;">*${meta.sub} CLASS</div>
+                    <div class="tier-header-title" style="margin-bottom:16px; font-weight:900; color:#EFE9D9; font-size:20px; border-bottom: 1px solid #333; padding-bottom: 8px;">
                         ${meta.title} 
-                        <span style="font-size:14px; color:var(--text-sub);">${items.length}</span>
+                        <span style="font-size:14px; color:#A09D96; margin-left:6px;">${items.length}</span>
                     </div>
-                    <div class="guide-grid">
+                    <div class="guide-grid" style="display:grid; grid-template-columns:1fr; gap:12px;">
             `;
-            
+
             items.forEach(function(i) {
                 const safeName = (i.name || '').replace(/'/g, "");
                 const safeCat = (i.category || '').replace(/'/g, "");
                 const safeAddr = (i.address || '').replace(/'/g, "");
                 const safeComment = (i.comment || '').replace(/'/g, "");
-                const finalImg = getSmartRestImage(i.kakao_id, i.category, i.image_url);
+                const finalImg = getSmartRestImage(i.kakao_id, i.category, i.global_top_photo || i.image_url);
                 
                 let selectHtml = '';
                 if (currentProfileIsMe) {
                     selectHtml = `
-                        <select onchange="executeChangeTier('${i.id}', this.value)" onclick="event.stopPropagation()" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:#FFF; border:1px solid rgba(255,255,255,0.3); border-radius:8px; font-size:11px; padding:6px; outline:none; font-weight:600;">
+                        <select onchange="executeChangeTier('${i.id}', this.value)" onclick="event.stopPropagation()" style="position:absolute; top:8px; right:8px; background:rgba(0,0,0,0.8); color:#FFF; border:1px solid rgba(255,255,255,0.3); border-radius:8px; font-size:11px; padding:6px; outline:none; font-weight:600; z-index:2;">
                             <option value="">등급수정</option>
                             <option value="⭐⭐⭐ (3스타)" ${i.tier === '⭐⭐⭐ (3스타)' ? 'selected' : ''}>3 Stars</option>
                             <option value="⭐⭐ (2스타)" ${i.tier === '⭐⭐ (2스타)' ? 'selected' : ''}>2 Stars</option>
                             <option value="⭐ (1스타)" ${i.tier === '⭐ (1스타)' ? 'selected' : ''}>1 Star</option>
-                            <option value="단순 추천" ${i.tier === '단순 추천' ? 'selected' : ''}>Rec</option>
+                            <option value="단순 추천" ${i.tier === '단순 추천' ? 'selected' : ''}>단순추천</option>
                             <option value="" ${!i.tier ? 'selected' : ''}>Wishlist</option>
                         </select>
                     `;
                 }
 
+                // 💡 CTO 핵심 수정: openRestDetail 파라미터 맨 끝에 `true` 추가! (방명록 켜기)
                 html += `
-                    <div class="guide-card" onclick="openRestDetail('${safeName}', '${safeCat}', '${safeAddr}', '${safeComment}', '${i.tier||''}', '${i.kakao_id||''}', '${i.image_url||''}', '${currentProfileOwner}', '${i.id||''}')">
-                        <img class="guide-card-bg" src="${finalImg}">
-                        <div class="guide-card-overlay">
-                            <div class="guide-tier-text" style="color:${meta.color};">${meta.sub}</div>
-                            <div class="guide-name-text">${i.name}</div>
-                            <div style="font-size:10px; color:#ddd; margin-top:4px; font-weight:500;">
+                    <div class="guide-card" onclick="openRestDetail('${safeName}', '${safeCat}', '${safeAddr}', '${safeComment}', '${i.tier||''}', '${i.kakao_id||''}', '${i.image_url||''}', '${currentProfileOwner}', '${i.id||''}', true)" style="position:relative; height:140px; border-radius:16px; overflow:hidden; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+                        <img class="guide-card-bg" src="${finalImg}" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; filter:brightness(0.6);">
+                        <div class="guide-card-overlay" style="position:absolute; bottom:0; left:0; right:0; padding:16px; background:linear-gradient(transparent, rgba(0,0,0,0.8));">
+                            <div class="guide-tier-text" style="color:${meta.color}; font-weight:800; font-size:12px; margin-bottom:4px;">${meta.sub}</div>
+                            <div class="guide-name-text" style="color:#fff; font-weight:bold; font-size:18px;">${i.name}</div>
+                            <div style="font-size:11px; color:#ddd; margin-top:2px; font-weight:500;">
                                 ${i.address ? i.address.split(' ')[0] : ''} · ${i.category ? i.category.split('>').pop().trim() : ''}
                             </div>
+                            ${safeComment ? `<div style="margin-top:8px; font-size:12px; color:#fff; font-style:italic; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">💬 "${safeComment}"</div>` : ''}
                         </div>
                         ${selectHtml}
                     </div>
@@ -384,13 +398,21 @@ async function fetchStats(u) {
         if (bar) {
             let statsHtml = '';
             Object.keys(d.stats).forEach(function(k) {
+                // CTO 수정: API 응답 텍스트를 무조건 예쁜 주황색 별 아이콘으로 매핑하도록 조건을 강화했습니다.
+                let label = k;
+                if (k.includes('3') || k.includes('3스타')) label = '⭐⭐⭐';
+                else if (k.includes('2') || k.includes('2스타')) label = '⭐⭐';
+                else if (k.includes('1') || k.includes('1스타')) label = '⭐';
+                else if (k.includes('추천') || k.toLowerCase().includes('rec')) label = '단순추천';
+                else if (k.includes('대기') || k.toLowerCase().includes('wish')) label = '대기중';
+
                 statsHtml += `
                     <div style="text-align:center;">
-                        <div style="font-weight:800; font-size:20px; line-height:1; color:#FFFFFF;">
+                        <div style="font-weight:900; font-size:24px; line-height:1; color:var(--brand-fab);">
                             ${d.stats[k].count}
                         </div>
-                        <div style="font-size:10px; font-weight:600; color:rgba(255,255,255,0.6); margin-top:6px; text-transform:uppercase; letter-spacing:1px;">
-                            ${k.split(' ')[0]}
+                        <div style="font-size:11px; font-weight:600; color:rgba(255,255,255,0.9); margin-top:6px; letter-spacing:0.5px;">
+                            ${label}
                         </div>
                     </div>
                 `;
@@ -486,7 +508,7 @@ async function submitProfileEdit() {
         });
 
         if(res.ok) {
-            alert(currentLang === 'ko' ? "프로필 정보가 성공적으로 업데이트되었습니다! ✨" : "Profile successfully updated! ✨");
+            showPremiumToast(currentLang === 'ko' ? "프로필 정보가 성공적으로 업데이트되었습니다! ✨" : "Profile successfully updated! ✨");
             closeEditProfileModal();
             fetchGuideView(localStorage.getItem('currentUser')); 
         } else {
@@ -496,4 +518,21 @@ async function submitProfileEdit() {
         console.error("프로필 수정 에러", e);
         alert("네트워크 통신 에러가 발생했습니다.");
     }
+}
+
+// 프리미엄 토스트 알림 함수
+function showPremiumToast(msg, icon = '✨') {
+    let toast = document.getElementById('premium-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'premium-toast';
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = `<span style="font-size:16px;">${icon}</span> <span>${msg}</span>`;
+    toast.classList.add('toast-show');
+    
+    // 2.5초 뒤에 스르륵 사라짐
+    setTimeout(() => {
+        toast.classList.remove('toast-show');
+    }, 2500);
 }
