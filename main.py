@@ -16,7 +16,6 @@ import re
 # =========================================================
 app = FastAPI(title="Perchel Backend API", version="3.0")
 
-# 🚨 가장 강력한 CORS 설정
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -63,7 +62,7 @@ class ImageUpdateRequest(BaseModel):
     image_url: str
 
 # =========================================================
-# [4] 소셜 로그인 (MongoDB 연동 및 초기 1회 프사 세팅)
+# [4] 소셜 로그인 (MongoDB 타입 자동 치유 적용)
 # =========================================================
 @app.post("/login/social")
 async def social_login(req: SocialLoginRequest):
@@ -93,45 +92,51 @@ async def social_login(req: SocialLoginRequest):
     else:
         raise HTTPException(status_code=400, detail="지원하지 않는 소셜 로그인입니다.")
 
-    # 💡 [CTO 핵심 패치] 프사와 이름은 '최초 가입 시($setOnInsert)'에만 저장!
-    # 이렇게 해야 나중에 유저가 앱에서 직접 바꾼 프사가 로그인할 때마다 날아가지 않습니다.
-    await users_col.update_one(
-        {"user_id": user_id},
-        {
-            "$set": {
-                # 매번 로그인할 때마다 갱신할 정보 (접속 시간)
-                "last_login": datetime.now().isoformat()
-            },
-            "$setOnInsert": {
-                # 🚨 오직 '처음 가입할 때 딱 한 번만' 세팅할 정보들!
-                "display_name": display_name,
-                "profile_image": profile_image, # 처음에만 구글/카카오 프사로 세팅
-                "following": [], # 로그인 시 팔로우 목록 초기화 절대 방어
-                "followers": 0,
-                "philosophy": "",
-                "taste_tags": [],
-                "personal_info": "",
-                "badges": ["뉴비 미식가 🌱"],
-                "level": "뉴비 미식가 🌱"
-            }
-        },
-        upsert=True
-    )
-    
-    print(f"[소셜가입/로그인 완료] 유저: {user_id}")
-
-    # 최신 유저 정보 다시 가져오기
     user = await users_col.find_one({"user_id": user_id})
 
+    if not user:
+        new_user = {
+            "user_id": user_id,
+            "display_name": display_name,
+            "profile_image": profile_image,
+            "following": [],
+            "followers": 0,
+            "philosophy": "",
+            "taste_tags": [],
+            "personal_info": "",
+            "badges": ["뉴비 미식가 🌱"],
+            "level": "뉴비 미식가 🌱",
+            "last_login": datetime.now().isoformat()
+        }
+        await users_col.insert_one(new_user)
+        user = new_user
+    else:
+        # 💡 [CTO 패치] 기존 유저 접속 시 DB 타입 오류(문자열 등) 자동 치료 로직
+        update_data = {"last_login": datetime.now().isoformat()}
+        
+        if not user.get("profile_image") and profile_image:
+            update_data["profile_image"] = profile_image
+            
+        if not isinstance(user.get("following"), list):
+            update_data["following"] = []
+        if type(user.get("followers")) is not int:
+            update_data["followers"] = 0
+
+        await users_col.update_one({"user_id": user_id}, {"$set": update_data})
+    
+    print(f"[소셜가입/로그인 완료] 유저: {user_id}")
+    
+    # 확실히 업데이트된 유저 정보 반환
+    user = await users_col.find_one({"user_id": user_id})
     return {
         "message": "로그인 성공", 
         "username": user_id, 
         "display_name": user.get("display_name"),
-        "following": user.get("following", [])
+        "following": user.get("following", []) if isinstance(user.get("following"), list) else []
     }
 
 # =========================================================
-# [5] 프로필 및 유저 데이터 조회 로직
+# [5] 프로필 및 유저 데이터 조회
 # =========================================================
 @app.get("/users/profiles")
 async def get_all_profiles():
@@ -179,7 +184,7 @@ async def update_profile(req: ProfileUpdateRequest, request: Request):
     return {"message": "프로필이 성공적으로 업데이트되었습니다."}
 
 # =========================================================
-# [6] 메인 화면 데이터 (홈, 네트워크)
+# [6] 메인 화면 데이터
 # =========================================================
 @app.get("/main/data")
 async def get_main_data():
@@ -189,11 +194,18 @@ async def get_main_data():
     for u in all_users:
         uid = u["user_id"]
         count = await rests_col.count_documents({"owner": uid})
+        
+        followers_cnt = u.get("followers", 0)
+        if type(followers_cnt) is not int: followers_cnt = 0
+            
+        following_list = u.get("following", [])
+        if not isinstance(following_list, list): following_list = []
+            
         editors.append({
             "username": uid,
             "display_name": u.get("display_name", uid),
-            "followers": u.get("followers", 0),
-            "following": u.get("following", []),
+            "followers": followers_cnt,
+            "following": following_list,
             "rest_count": count
         })
     
@@ -230,14 +242,13 @@ async def get_main_data():
     }
 
 # =========================================================
-# [7] 랭킹 시스템 (메뉴 및 장소 검색 + 스마트 매핑)
+# [7] 랭킹 시스템 
 # =========================================================
 @app.get("/ranking")
 async def get_ranking(keyword: str = ""):
     query = {"kakao_id": {"$ne": "", "$exists": True}}
     
     if keyword:
-        # 💡 CTO 추가: 사용자가 메뉴를 치면 카테고리까지 유추하는 스마트 엔진
         search_terms = [keyword]
         kw_lower = keyword.lower()
         if any(k in kw_lower for k in ["탕수육", "짜장", "짬뽕", "마라", "중국집"]): search_terms.append("중식")
@@ -276,7 +287,7 @@ async def get_ranking(keyword: str = ""):
     return {"ranking": ranking}
 
 # =========================================================
-# [8] 피드 (실시간 리뷰)
+# [8] 피드 및 서열표 조회
 # =========================================================
 @app.get("/feed")
 async def get_feed():
@@ -284,9 +295,6 @@ async def get_feed():
     for r in rests: r.pop("_id", None)
     return {"data": rests}
 
-# =========================================================
-# [9] 특정 유저의 맛집 조회 (서열표, 프로필)
-# =========================================================
 @app.get("/restaurants")
 async def get_restaurants(request: Request):
     user_id = request.headers.get('user-id')
@@ -296,6 +304,9 @@ async def get_restaurants(request: Request):
     for r in user_rests: r.pop("_id", None)
     return {"data": user_rests}
 
+# =========================================================
+# 🔥 [수정됨] 2. 내 프로필의 숫자를 100% 정확하게 쏴주는 로직
+# =========================================================
 @app.get("/guide/{username}")
 async def get_guide(username: str):
     user_data = await users_col.find_one({"user_id": username}) or {}
@@ -317,15 +328,26 @@ async def get_guide(username: str):
         else:
             guide["평가 대기 중 ⏳"].append(r)
             
+    # 💡 [방어 코드] DB에 타입이 깨져있어도 프론트엔드로 숫자와 배열로 완벽하게 변환해서 보냄
+    followers_cnt = user_data.get("followers", 0)
+    if type(followers_cnt) is not int: followers_cnt = 0
+        
+    following_list = user_data.get("following", [])
+    if not isinstance(following_list, list): following_list = []
+
+    print(f"📊 [{username}]님 프로필 로드 완료 -> 팔로워: {followers_cnt}명 / 팔로잉: {len(following_list)}명")
+
     return {
         "guide": guide,
         "nickname": user_data.get("display_name", username),
         "philosophy": user_data.get("philosophy", ""),
         "taste_tags": user_data.get("taste_tags", []),
         "personal_info": user_data.get("personal_info", ""),
-        "badges": user_data.get("badges", [])
+        "badges": user_data.get("badges", []),
+        "followers": followers_cnt,       
+        "following": following_list     
     }
-
+    
 @app.get("/profile/stats")
 async def get_profile_stats(request: Request):
     user_id = request.headers.get('user-id')
@@ -349,9 +371,6 @@ async def get_profile_stats(request: Request):
             
     return {"stats": stats}
 
-# =========================================================
-# [10] 외부 API 연동
-# =========================================================
 @app.get("/search/kakao")
 async def search_kakao(query: str):
     url = "https://dapi.kakao.com/v2/local/search/keyword.json"
@@ -379,18 +398,15 @@ async def get_ai_images(rest_id: str, name: str):
 # =========================================================
 # [11] 맛집 등록, 수정, 삭제 (CRUD)
 # =========================================================
-
-# 💡 [CTO 핵심 로직] 유저의 미적 권위(랭크)를 수치화하는 함수
 async def get_user_rank(user_id: str):
     user = await users_col.find_one({"user_id": user_id})
     if not user: return 0
     
     followers = user.get("followers", 0)
+    if type(followers) is not int: followers = 0
     review_count = await rests_col.count_documents({"owner": user_id})
     
-    # 랭크 점수 공식: $rank\_score = (followers \times 10) + (reviews \times 2)$
     return (followers * 10) + (review_count * 2)
-
 
 @app.post("/restaurants")
 async def add_restaurant(
@@ -419,9 +435,6 @@ async def add_restaurant(
 
     main_image = image_urls[0] if image_urls else ""
 
-    # ---------------------------------------------------------
-    # 👑 [옵션 C: 멘토 우선 로직 - 썸네일 쟁탈전]
-    # ---------------------------------------------------------
     rank_score = await get_user_rank(user_id)
     
     existing_rests = await rests_col.find({"kakao_id": kakao_id}).to_list(None)
@@ -476,13 +489,10 @@ async def add_restaurant(
     await rests_col.insert_one(rest_data)
     return {"message": "성공적으로 추가되었습니다.", "id": rest_data["id"]}
 
-
-# 💡 [CTO 추가] 등록된 식당 사진만 변경하는 API (옵션 C 완벽 적용)
 @app.post("/restaurants/{rest_id}/photo")
 async def update_restaurant_photo(rest_id: str, request: Request, image: UploadFile = File(...)):
     user_id = request.headers.get('user-id')
-    if not user_id: 
-        raise HTTPException(status_code=401, detail="권한 없음")
+    if not user_id: raise HTTPException(status_code=401, detail="권한 없음")
 
     file_extension = image.filename.split(".")[-1]
     file_name = f"rest_{uuid.uuid4().hex[:12]}.{file_extension}"
@@ -492,8 +502,7 @@ async def update_restaurant_photo(rest_id: str, request: Request, image: UploadF
     new_image_url = f"/images/{file_name}"
 
     rest = await rests_col.find_one({"id": rest_id})
-    if not rest: 
-        return {"error": "식당을 찾을 수 없습니다."}
+    if not rest: return {"error": "식당을 찾을 수 없습니다."}
     
     kakao_id = rest.get("kakao_id", "")
     update_doc = {"image_url": new_image_url}
@@ -517,7 +526,6 @@ async def update_restaurant_photo(rest_id: str, request: Request, image: UploadF
 
     await rests_col.update_one({"id": rest_id}, {"$set": update_doc})
     return {"message": "사진이 성공적으로 업데이트 되었습니다.", "url": new_image_url}
-
 
 @app.put("/restaurants/{rest_id}")
 async def update_tier(rest_id: str, req: TierUpdateRequest, request: Request):
@@ -547,7 +555,7 @@ async def delete_restaurant(rest_id: str, request: Request):
     return {"message": "성공적으로 삭제되었습니다."}
 
 # =========================================================
-# [12] 소셜 네트워킹 (팔로우, 북마크, 좋아요, 방명록) & 알림
+# [12] 소셜 네트워킹 (팔로우 완전 무결성 패치 적용 🛡️)
 # =========================================================
 async def add_notification(user_id, noti_type, message):
     noti_data = {
@@ -558,45 +566,56 @@ async def add_notification(user_id, noti_type, message):
         "created_at": datetime.now().isoformat()
     }
     
-    await notis_col.update_one(
-        {"user_id": user_id},
-        {"$push": {
-            "notifications": {
-                "$each": [noti_data],
-                "$position": 0,
-                "$slice": 50
-            }
-        }},
-        upsert=True
-    )
+    try:
+        await notis_col.update_one(
+            {"user_id": user_id},
+            {"$push": {"notifications": {"$each": [noti_data], "$position": 0, "$slice": 50}}},
+            upsert=True
+        )
+    except Exception as e:
+        print(f"알림 푸시 에러 (DB 타입 충돌 무시): {e}")
 
-# 💡 [CTO 핵심 패치] 팔로우 토글 시 DB에 완벽히 기록되도록 수정
+# =========================================================
+# 🔥 [수정됨] 1. 완벽한 DB 동기화 및 추적기가 달린 팔로우 로직
+# =========================================================
 @app.post("/follow/{target_user}")
 async def toggle_follow(target_user: str, request: Request):
     user_id = request.headers.get('user-id')
+    print(f"=====================================")
+    print(f"🚀 [팔로우 토글 요청] 나({user_id}) -> 상대({target_user})")
     
     if not user_id or user_id == target_user:
         raise HTTPException(status_code=400, detail="잘못된 요청입니다.")
 
     me = await users_col.find_one({"user_id": user_id})
     if not me:
-        raise HTTPException(status_code=404, detail="유저 정보를 찾을 수 없습니다.")
+        raise HTTPException(status_code=404, detail="내 정보를 찾을 수 없습니다.")
         
     following_list = me.get("following", [])
+    if not isinstance(following_list, list):
+        following_list = []
 
-    if target_user in following_list:
-        # 언팔로우 로직
-        await users_col.update_one({"user_id": user_id}, {"$pull": {"following": target_user}})
-        await users_col.update_one({"user_id": target_user}, {"$inc": {"followers": -1}})
+    is_following = target_user in following_list
+    print(f"👀 현재 상태: {'이미 팔로잉 중 (언팔로우 진행)' if is_following else '팔로우 안함 (팔로우 진행)'}")
+
+    if is_following:
+        r1 = await users_col.update_one({"user_id": user_id}, {"$pull": {"following": target_user}})
+        r2 = await users_col.update_one({"user_id": target_user}, {"$inc": {"followers": -1}})
+        print(f"✅ DB 수정 성공 건수 -> 내 DB: {r1.modified_count}건 / 상대 DB: {r2.modified_count}건")
     else:
-        # 팔로우 로직
-        await users_col.update_one({"user_id": user_id}, {"$addToSet": {"following": target_user}})
-        await users_col.update_one({"user_id": target_user}, {"$inc": {"followers": 1}})
+        r1 = await users_col.update_one({"user_id": user_id}, {"$addToSet": {"following": target_user}})
+        r2 = await users_col.update_one({"user_id": target_user}, {"$inc": {"followers": 1}})
+        print(f"✅ DB 수정 성공 건수 -> 내 DB: {r1.modified_count}건 / 상대 DB: {r2.modified_count}건")
         await add_notification(target_user, "follow", f"🤝 {user_id}님이 회원님을 팔로우합니다.")
 
-    # 최신 팔로우 리스트 가져와서 반환
     updated_me = await users_col.find_one({"user_id": user_id})
-    return {"message": "success", "following": updated_me.get("following", [])}
+    final_following = updated_me.get("following", [])
+    if not isinstance(final_following, list): final_following = []
+    
+    print(f"🏁 내 최종 팔로잉 수: {len(final_following)}명")
+    print(f"=====================================")
+
+    return {"message": "success", "following": final_following}
 
 @app.post("/restaurants/bookmark/{rest_id}")
 async def bookmark_restaurant(rest_id: str, request: Request):
@@ -623,6 +642,8 @@ async def toggle_like(rest_id: str, request: Request):
     if not r: raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다.")
         
     likes = r.get("likes", [])
+    if not isinstance(likes, list): likes = []
+        
     if user_id in likes:
         likes.remove(user_id)
         liked = False
@@ -642,6 +663,8 @@ async def add_comment(rest_id: str, req: CommentRequest, request: Request):
     if not r: raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다.")
         
     comments = r.get("comments", [])
+    if not isinstance(comments, list): comments = []
+        
     new_comment = {"user": user_id, "text": req.text, "time": datetime.now().isoformat()}
     comments.append(new_comment)
     
@@ -659,9 +682,11 @@ async def add_comment(rest_id: str, req: CommentRequest, request: Request):
 async def get_notifications(request: Request):
     user_id = request.headers.get('user-id')
     user_doc = await notis_col.find_one({"user_id": user_id}) or {}
-    user_notis = user_doc.get("notifications", [])
-    unread_count = sum(1 for n in user_notis if not n.get("read"))
     
+    user_notis = user_doc.get("notifications", [])
+    if not isinstance(user_notis, list): user_notis = []
+        
+    unread_count = sum(1 for n in user_notis if not n.get("read"))
     return {"notifications": user_notis, "unread_count": unread_count}
 
 @app.put("/notifications/read")
@@ -670,7 +695,8 @@ async def read_notifications(request: Request):
     user_doc = await notis_col.find_one({"user_id": user_id})
     if user_doc:
         notis = user_doc.get("notifications", [])
-        for n in notis: n["read"] = True
-        await notis_col.update_one({"user_id": user_id}, {"$set": {"notifications": notis}})
-        
+        if isinstance(notis, list):
+            for n in notis: n["read"] = True
+            await notis_col.update_one({"user_id": user_id}, {"$set": {"notifications": notis}})
+            
     return {"message": "알림 읽음 처리 완료"}

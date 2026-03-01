@@ -159,7 +159,8 @@ async function fetchGuideView(u, isForeign = false) {
     const isFollowing = followingList.includes(u);
     
     try {
-        const res = await fetch(`${API_URL}/guide/${u}`);
+        const timestamp = new Date().getTime();
+        const res = await fetch(`${API_URL}/guide/${u}?t=${timestamp}`);
         if (!res.ok) throw new Error("서버 에러 발생");
         
         const data = await res.json(); 

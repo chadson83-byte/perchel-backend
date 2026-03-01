@@ -18,8 +18,8 @@
     <script src="https://developers.kakao.com/sdk/js/kakao.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
-    <link rel="stylesheet" href="style.css">
-
+    <link rel="stylesheet" href="style.css?v=999">
+    
     <style>
         #splash-screen {
             position: fixed;
@@ -90,6 +90,22 @@
             0%, 100% { opacity: 0.5; }
             50% { opacity: 1; }
         }
+
+        /* =========================================================
+           🚀 [탐색 탭] 디자인 강제 주입 (웹뷰 캐시 무시)
+           ========================================================= */
+        .trendy-explore-title { font-size: 26px !important; font-weight: 900 !important; color: #EFE9D9 !important; margin: 20px 0 24px !important; text-align: center !important; display: flex !important; justify-content: center !important; align-items: center !important; gap: 6px !important; letter-spacing: -0.5px !important; }
+        .trendy-highlight { color: #FF5A20 !important; font-size: 30px !important; font-style: italic !important; position: relative !important; padding-bottom: 2px !important; }
+        .trendy-highlight::after { content: ''; position: absolute; bottom: 0; left: -5%; width: 110%; height: 6px; background: #FF5A20 !important; border-radius: 10px; transform: rotate(-3deg); }
+        
+        .trendy-tab-wrapper { display: flex !important; background: #1A1A1C !important; border: 1px solid #333 !important; border-radius: 30px !important; padding: 4px !important; margin: 0 20px 24px !important; }
+        .trendy-tab-btn { flex: 1 !important; padding: 12px 0 !important; text-align: center !important; font-size: 14px !important; font-weight: 800 !important; color: #A09D96 !important; border-radius: 26px !important; cursor: pointer !important; transition: all 0.3s ease !important; }
+        .trendy-tab-btn.active { background: #FF5A20 !important; color: #FFF !important; box-shadow: 0 4px 12px rgba(255, 90, 32, 0.4) !important; }
+        
+        .trendy-rank-card { display: flex !important; background: linear-gradient(135deg, #2D231F 0%, #1A1A1C 100%) !important; border: 1px solid rgba(255, 90, 32, 0.15) !important; border-radius: 16px !important; margin: 0 20px 16px !important; padding: 16px !important; align-items: center !important; box-shadow: 0 8px 20px rgba(0,0,0,0.4) !important; overflow: hidden !important; cursor: pointer !important; }
+        .trendy-rank-num { font-size: 46px !important; font-weight: 900 !important; font-style: italic !important; background: linear-gradient(180deg, #FFB380 0%, #D95319 100%) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; margin-right: 20px !important; width: 40px !important; text-align: center !important; line-height: 1 !important; text-shadow: 2px 4px 8px rgba(0,0,0,0.2) !important; }
+        .trendy-rank-info { flex: 1 !important; display: flex !important; flex-direction: column !important; gap: 4px !important; }
+        .trendy-rank-img { width: 80px !important; height: 80px !important; border-radius: 12px !important; object-fit: cover !important; box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important; }
     </style>
 </head>
 <body>
@@ -213,25 +229,26 @@
         </div>
 
         <div id="explore-view" class="tab-view premium-view" style="display:none; padding-top:100px;">
-            <div class="section-title-premium" style="text-align: center; margin-bottom: 30px !important;">
-                <h2 data-ko="인기 식당 정보" data-en="Explore">인기 식당 정보</h2>
-                <div class="section-subtitle">DISCOVER & FEED</div>
+            
+            <div class="trendy-explore-title">
+                지금, 가장 <span class="trendy-highlight">핫한</span> 맛집
             </div>
             
-            <div style="display:flex; gap:10px; margin-bottom:30px; justify-content:center; padding: 0 24px;">
-                <button id="tab-explore-ranking" onclick="switchExploreTab('ranking')" class="explore-tab-btn active">식당 도감 인기순</button>
-                <button id="tab-explore-feed" onclick="switchExploreTab('feed')" class="explore-tab-btn">실시간 미식 피드</button>
+            <div class="trendy-tab-wrapper">
+                <div id="tab-explore-ranking" onclick="switchExploreTab('ranking')" class="trendy-tab-btn active">식당 도감 인기순</div>
+                <div id="tab-explore-feed" onclick="switchExploreTab('feed')" class="trendy-tab-btn">실시간 미식 피드</div>
             </div>
             
             <div id="explore-ranking-area" style="padding: 0 24px;">
-                <input type="text" id="ranking-search-input" class="input-field" placeholder="메뉴나 식당 이름을 검색하세요 🔍" onkeyup="if(event.keyCode==13) fetchRankingData()">
-                <div style="font-size:12px; color:var(--text-sub); margin-bottom:20px; text-align:center;">아무것도 입력하지 않고 돋보기를 누르면 '전체 랭킹'이 표시됩니다.</div>
-                <button class="btn-primary" style="margin-bottom:30px;" onclick="fetchRankingData()">실시간 서열표 등재 랭킹</button>
+                <input type="text" id="ranking-search-input" placeholder="어떤 맛을 찾으세요? 🔍" onkeyup="if(event.keyCode==13) fetchRankingData()" style="width: 100%; padding: 14px 16px; background: #1A1A1C; border: 1px solid #333; border-radius: 12px; color: #FFF; font-size: 14px; margin-bottom: 24px; outline: none;">
                 <div id="ranking-list-container"></div>
             </div>
-            <div id="explore-feed-area" style="display:none; padding: 0 24px;"><div id="feed-scroll-area"></div></div>
+
+            <div id="explore-feed-area" style="display:none; padding: 0 24px;">
+                <div id="feed-scroll-area"></div>
+            </div>
         </div>
-        
+            
         <div id="map-view" class="tab-view" style="display:none; height: 100vh; padding: 60px 0 0 0;">
             <div id="global-map" style="width:100%; height:100%; background:#eee;"></div>
             <div class="my-location-btn" style="position: absolute; bottom: 100px; right: 20px; width: 44px; height: 44px; background: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 10; cursor: pointer; border: 1px solid var(--border-color);" onclick="moveToMyLocation()" title="내 위치로 이동">
@@ -577,7 +594,7 @@ window.addEventListener('popstate', function(event) {
         }
     });
 
-    // 방금 모달을 닫았다면, 다음 뒤로가기 때 앱이 꺼지지 않도록 다시 총알(상태)을 장전합니다.
+    // 방금 모달을 닫았다면, 다음 뒤로가기 때 앱이 꺼지지 않도록 다시 총알(상태) 장전합니다.
     if (modalClosed) {
         window.history.pushState({ noBackExitsApp: true }, '');
         return; 
